@@ -33,6 +33,7 @@ class Staff(Base):
     role: Mapped[str] = mapped_column(String(40), default="店员")
     phone: Mapped[str | None] = mapped_column(String(40))
     status: Mapped[str] = mapped_column(String(20), default="启用")
+    wecom_userid: Mapped[str | None] = mapped_column(String(120))
 
 
 class Customer(Base):
@@ -49,6 +50,8 @@ class Customer(Base):
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     visit_count: Mapped[int] = mapped_column(Integer, default=0)
     do_not_disturb: Mapped[bool] = mapped_column(Boolean, default=False)
+    external_userid: Mapped[str | None] = mapped_column(String(120))
+    push_consent_status: Mapped[str] = mapped_column(String(40), default="unknown")
     note: Mapped[str | None] = mapped_column(Text)
 
     store: Mapped[Store] = relationship(back_populates="customers")
@@ -133,6 +136,28 @@ class FollowTask(Base):
 
     customer: Mapped[Customer] = relationship(back_populates="follow_tasks")
     pet: Mapped[Pet] = relationship(back_populates="follow_tasks")
+    push_tasks: Mapped[list["PushTask"]] = relationship(back_populates="follow_task")
+
+
+class PushTask(Base):
+    __tablename__ = "push_tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"), nullable=False)
+    follow_task_id: Mapped[int | None] = mapped_column(ForeignKey("follow_tasks.id"))
+    channel: Mapped[str] = mapped_column(String(40), nullable=False)
+    receiver_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    receiver_id: Mapped[str] = mapped_column(String(160), nullable=False)
+    scene: Mapped[str] = mapped_column(String(80), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="pending")
+    approved_by: Mapped[int | None] = mapped_column(ForeignKey("staff.id"))
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    follow_task: Mapped[FollowTask | None] = relationship(back_populates="push_tasks")
 
 
 class Product(Base):

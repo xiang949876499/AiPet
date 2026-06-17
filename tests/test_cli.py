@@ -34,3 +34,62 @@ def test_cli_seed_dashboard_and_pending_reminders(tmp_path, monkeypatch):
     samples_result = runner.invoke(cli, ["sample", "pending"])
     assert samples_result.exit_code == 0
     assert "试用装待回访" in samples_result.output
+
+
+def test_cli_lists_and_dry_runs_internal_push_tasks(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'push.db'}")
+
+    from app.database import SessionLocal
+    from app.models import PushTask, Store
+    from main import cli
+
+    runner = CliRunner()
+    assert runner.invoke(cli, ["init-db"]).exit_code == 0
+
+    session = SessionLocal()
+    try:
+        store = Store(name="豆豆宠物店")
+        session.add(store)
+        session.flush()
+        session.add(
+            PushTask(
+                store_id=store.id,
+                channel="wecom_internal",
+                receiver_type="staff",
+                receiver_id="wang",
+                scene="repurchase_reminder",
+                content="请跟进豆豆的洗护提醒",
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    list_result = runner.invoke(cli, ["push", "list"])
+    assert list_result.exit_code == 0
+    assert "推送任务" in list_result.output
+    assert "wecom_internal" in list_result.output
+
+    send_result = runner.invoke(cli, ["push", "send-internal", "--dry-run"])
+    assert send_result.exit_code == 0
+    assert "dry-run" in send_result.output
+    assert "请跟进豆豆的洗护提醒" in send_result.output
+
+
+def test_cli_creates_internal_push_task_from_seeded_demo_data(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'push_create.db'}")
+
+    from main import cli
+
+    runner = CliRunner()
+    assert runner.invoke(cli, ["init-db"]).exit_code == 0
+    assert runner.invoke(cli, ["seed"]).exit_code == 0
+    assert runner.invoke(cli, ["dashboard"]).exit_code == 0
+
+    create_result = runner.invoke(
+        cli,
+        ["push", "create-internal", "--follow-task-id", "1", "--staff-id", "1"],
+    )
+
+    assert create_result.exit_code == 0
+    assert "已创建内部推送任务" in create_result.output

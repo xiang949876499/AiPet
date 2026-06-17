@@ -8,6 +8,7 @@
 - 洗护到期与沉睡客户复购提醒
 - 试用装回访任务生成
 - AI/模板话术生成，支持无 API Key 离线运行
+- 企业微信内部应用通知任务，支持 dry-run 和发送状态回写
 - CLI 工作台和 Web 今日工作台
 - SQLite 本地数据库，后续可迁移到 PostgreSQL
 
@@ -15,7 +16,7 @@
 
 本项目不提供宠物健康问诊、疾病诊断、用药建议、治疗建议或医疗图片识别。涉及健康、疾病、治疗的问题，应建议客户联系专业兽医或正规宠物医院。
 
-MVP 阶段不自动群发外部消息。所有话术由系统生成后，必须由店员确认并手动复制发送。
+MVP 阶段不自动群发外部客户消息。所有客户侧话术由系统生成后，必须由店员确认并手动复制发送。企业微信能力当前只用于给门店内部成员推送待办提醒。
 
 ## 快速开始
 
@@ -27,6 +28,8 @@ uv run python main.py init-db
 uv run python main.py seed
 uv run python main.py dashboard
 uv run python main.py reminders pending
+uv run python main.py push list
+uv run python main.py push send-internal --dry-run
 ```
 
 启动 Web 工作台：
@@ -39,7 +42,29 @@ uv run uvicorn web.app:app --reload
 
 ```text
 http://localhost:8000
+http://localhost:8000/push-tasks
 ```
+
+## 企业微信内部通知
+
+配置 `.env`：
+
+```env
+WECOM_CORP_ID=
+WECOM_AGENT_ID=
+WECOM_APP_SECRET=
+WECOM_INTERNAL_NOTIFY_ENABLED=false
+```
+
+常用命令：
+
+```powershell
+uv run python main.py push create-internal --follow-task-id 1 --staff-id 1
+uv run python main.py push send-internal --dry-run
+uv run python main.py push send-internal
+```
+
+`send-internal` 只有在 `WECOM_INTERNAL_NOTIFY_ENABLED=true` 时才会真实调用企业微信；测试和演示优先使用 `--dry-run`。
 
 ## 测试
 

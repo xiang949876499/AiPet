@@ -53,3 +53,24 @@ def test_follow_task_records_ai_message_and_result(db_session, sample_records):
     assert saved.customer.name == "张姐"
     assert saved.pet.name == "豆豆"
     assert saved.result == "已预约"
+
+
+def test_push_task_records_channel_receiver_and_status(db_session, sample_records):
+    from app.models import PushTask
+
+    task = PushTask(
+        store_id=sample_records["store"].id,
+        follow_task_id=None,
+        channel="wecom_internal",
+        receiver_type="staff",
+        receiver_id="zhang_staff",
+        scene="repurchase_reminder",
+        content="豆豆该洗护了，请跟进。",
+    )
+    db_session.add(task)
+    db_session.commit()
+
+    saved = db_session.query(PushTask).one()
+    assert saved.status == "pending"
+    assert saved.channel == "wecom_internal"
+    assert saved.receiver_id == "zhang_staff"

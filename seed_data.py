@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from app.models import Customer, Pet, ServiceRecord, Store
+from app.models import Customer, Pet, ServiceRecord, Staff, Store
 
 
 def seed_demo_data(session):
@@ -10,6 +10,8 @@ def seed_demo_data(session):
     store = Store(name="豆豆宠物店", owner_name="张店长", phone="13800000000", business_type="洗护")
     session.add(store)
     session.flush()
+
+    session.add(Staff(store_id=store.id, name="小王", role="店员", phone="13800000001", wecom_userid="wang"))
 
     customers = [
         ("张姐", "豆豆", "狗", "柯基", 24, 21),

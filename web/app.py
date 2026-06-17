@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 
 from agents.reminder import ReminderAgent
 from app.database import SessionLocal, init_db
-from app.models import Customer, FollowTask
+from app.models import Customer, FollowTask, PushTask
 
 templates = Jinja2Templates(directory="web/templates")
 
@@ -27,6 +27,32 @@ def create_app() -> FastAPI:
                 request,
                 "dashboard.html",
                 {"metrics": metrics, "tasks": tasks, "app_name": "宠物店 AI 复购提醒助手"},
+            )
+        finally:
+            session.close()
+
+    @app.get("/push-tasks", response_class=HTMLResponse)
+    def push_tasks(request: Request):
+        init_db()
+        session = SessionLocal()
+        try:
+            tasks = session.query(PushTask).order_by(PushTask.created_at.desc()).all()
+            status_labels = {
+                "pending": "待确认",
+                "approved": "已确认",
+                "sent": "已发送",
+                "failed": "发送失败",
+                "skipped": "已跳过",
+                "cancelled": "已取消",
+            }
+            return templates.TemplateResponse(
+                request,
+                "push_tasks.html",
+                {
+                    "tasks": tasks,
+                    "status_labels": status_labels,
+                    "app_name": "宠物店 AI 复购提醒助手",
+                },
             )
         finally:
             session.close()

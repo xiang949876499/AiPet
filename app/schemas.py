@@ -23,3 +23,17 @@ class CustomerRead(BaseModel):
     last_visit_time: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+class PushTaskRead(BaseModel):
+    id: int
+    channel: str
+    receiver_type: str
+    receiver_id: str
+    scene: str
+    content: str
+    status: str
+    error_message: str | None = None
+    sent_at: datetime | None = None
+
+    model_config = {"from_attributes": True}

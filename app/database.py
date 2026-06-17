@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
@@ -24,6 +25,36 @@ def _create_engine(database_url: str):
     return create_engine(database_url, connect_args={"check_same_thread": False})
 
 
+def _sqlite_columns(connection, table_name: str) -> set[str]:
+    rows = connection.execute(text(f"PRAGMA table_info({table_name})")).mappings().all()
+    return {row["name"] for row in rows}
+
+
+def _ensure_sqlite_schema_compatibility(bind) -> None:
+    if bind.dialect.name != "sqlite":
+        return
+
+    column_patches = {
+        "customers": {
+            "external_userid": "ALTER TABLE customers ADD COLUMN external_userid VARCHAR(120)",
+            "push_consent_status": (
+                "ALTER TABLE customers ADD COLUMN push_consent_status VARCHAR(40) DEFAULT 'unknown'"
+            ),
+        },
+        "staff": {
+            "wecom_userid": "ALTER TABLE staff ADD COLUMN wecom_userid VARCHAR(120)",
+        },
+    }
+    with bind.begin() as connection:
+        for table_name, patches in column_patches.items():
+            columns = _sqlite_columns(connection, table_name)
+            if not columns:
+                continue
+            for column_name, statement in patches.items():
+                if column_name not in columns:
+                    connection.execute(text(statement))
+
+
 engine = _create_engine(_current_database_url())
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
@@ -34,3 +65,4 @@ def init_db() -> None:
     engine = _create_engine(database_url)
     SessionLocal.configure(bind=engine)
     Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_schema_compatibility(engine)
