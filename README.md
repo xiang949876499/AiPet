@@ -56,6 +56,21 @@ WECOM_APP_SECRET=
 WECOM_INTERNAL_NOTIFY_ENABLED=false
 ```
 
+企业微信登录还需要配置：
+
+```env
+WECOM_REDIRECT_URI=https://你的域名/wecom/oauth/callback
+WECOM_OAUTH_ENABLED=true
+```
+
+在企业微信后台把 `WECOM_REDIRECT_URI` 对应域名加入应用可信域名，并确认应用可见范围包含门店店员。登录入口：
+
+```text
+http://localhost:8000/wecom/oauth/start
+```
+
+登录成功后，系统会用企业微信 `UserID` 绑定本地店员，并写入本地登录 cookie。
+
 常用命令：
 
 ```powershell

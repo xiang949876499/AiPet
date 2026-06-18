@@ -43,6 +43,10 @@ def _ensure_sqlite_schema_compatibility(bind) -> None:
         },
         "staff": {
             "wecom_userid": "ALTER TABLE staff ADD COLUMN wecom_userid VARCHAR(120)",
+            "wecom_corp_id": "ALTER TABLE staff ADD COLUMN wecom_corp_id VARCHAR(120)",
+            "wecom_name": "ALTER TABLE staff ADD COLUMN wecom_name VARCHAR(120)",
+            "wecom_avatar": "ALTER TABLE staff ADD COLUMN wecom_avatar VARCHAR(255)",
+            "wecom_bound_at": "ALTER TABLE staff ADD COLUMN wecom_bound_at DATETIME",
         },
     }
     with bind.begin() as connection:

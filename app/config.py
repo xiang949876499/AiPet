@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     wecom_app_secret: str = ""
     wecom_token: str = ""
     wecom_encoding_aes_key: str = ""
+    wecom_redirect_uri: str = ""
+    wecom_oauth_enabled: bool = False
+    wecom_callback_enabled: bool = False
+    wecom_contact_sync_enabled: bool = False
     wecom_internal_notify_enabled: bool = False
     wecom_customer_send_enabled: bool = False
 

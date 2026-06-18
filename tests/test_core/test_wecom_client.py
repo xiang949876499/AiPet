@@ -49,3 +49,32 @@ def test_wecom_client_sends_internal_text_with_injected_http():
     assert posts[0][1]["touser"] == "wang"
     assert posts[0][1]["agentid"] == 1000001
     assert posts[0][1]["text"]["content"] == "请跟进豆豆的洗护提醒"
+
+
+def test_wecom_client_fetches_oauth_userid_with_injected_http():
+    from core.wecom_client import WeComClient
+
+    calls = []
+
+    def fetch_token(corp_id: str, app_secret: str):
+        return {"access_token": "abc", "expires_in": 7200}
+
+    def get_json(url: str, params: dict):
+        calls.append((url, params))
+        return {"errcode": 0, "UserId": "wang"}
+
+    client = WeComClient(
+        corp_id="cid",
+        app_secret="sec",
+        agent_id="1000001",
+        token_fetcher=fetch_token,
+        get_json=get_json,
+    )
+
+    assert client.get_oauth_userid("login-code") == "wang"
+    assert calls == [
+        (
+            "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo",
+            {"access_token": "abc", "code": "login-code"},
+        )
+    ]

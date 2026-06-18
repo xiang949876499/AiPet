@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.11+、uv、FastAPI、SQLAlchemy、SQLite、httpx、pytest、企业微信自建应用 API、企业微信客户联系 API。
 
-**Execution Status 2026-06-17:** 已执行内部通知闭环 Task 1-7，包括企业微信 token client、`PushTask` 模型、推送策略、`FollowTask` 转内部推送任务、发送状态回写、CLI dry-run/发送命令、Web 审核页。客户侧群发 Task 8 尚未执行。
+**Execution Status 2026-06-18:** 已执行内部通知闭环 Task 1-7，包括企业微信 token client、`PushTask` 模型、推送策略、`FollowTask` 转内部推送任务、发送状态回写、CLI dry-run/发送命令、Web 审核页。已执行 Task 9 企业微信 OAuth 登录与 `Staff` 绑定。客户侧群发 Task 8、回调事件 Task 10、通讯录同步 Task 11 尚未执行。
 
 ---
 
@@ -60,6 +60,296 @@
 - 外部联系人欢迎语依赖客户添加事件中的 `welcome_code`，适合新客户首次添加后的短窗口触达。
 
 实现前必须重新核对企业微信官方文档中的接口路径、参数和频率限制。
+
+## 企业微信完整接入扩展计划（2026-06-18）
+
+本节补充完整企业微信接入路径，覆盖登录、账号绑定、内部消息、回调事件、通讯录同步和未来多企业 SaaS 化。当前项目已完成内部应用消息推送闭环，后续接入应在此基础上扩展，避免绕开现有 `PushTask`、`WeComClient`、推送策略和审计日志。
+
+### 接入模式选择
+
+第一阶段采用 **企业内部自建应用**：
+
+- 适合 AIPet 当前门店内部员工使用。
+- 支持企业微信 OAuth 登录、成员身份识别、内部应用消息、事件回调。
+- 复杂度低于第三方服务商模式。
+
+暂不采用第三方应用/服务商模式，除非后续明确要让多个外部企业自行授权安装 AIPet。服务商模式需要额外维护 `suite_access_token`、`permanent_code`、企业授权状态和多租户隔离。
+
+群机器人 Webhook 只适合作为临时群通知方案，不作为主接入路径。
+
+### 后台配置清单
+
+在企业微信管理后台创建自建应用，并记录：
+
+```text
+CorpID      企业 ID
+AgentId     应用 ID
+Secret      应用 Secret
+Token       回调 Token，自定义
+AESKey      EncodingAESKey，企业微信生成
+```
+
+后台还必须配置：
+
+- 应用可见范围，至少包含需要登录或接收提醒的店员。
+- OAuth 可信域名，对应 AIPet 后端回调域名。
+- 服务器可信 IP，对应 AIPet 后端出口 IP。
+- 回调 URL、Token、EncodingAESKey。
+
+### 环境变量
+
+`.env.example` 已包含基础企业微信变量。后续做 OAuth 登录时补充：
+
+```env
+WECOM_REDIRECT_URI=
+WECOM_OAUTH_ENABLED=false
+WECOM_CALLBACK_ENABLED=false
+WECOM_CONTACT_SYNC_ENABLED=false
+```
+
+约束：
+
+- `WECOM_APP_SECRET`、`WECOM_TOKEN`、`WECOM_ENCODING_AES_KEY` 只允许放环境变量或密钥管理系统。
+- 不把 Secret、Token、AESKey 写入数据库、日志或前端页面。
+- 测试环境必须使用 fake client，不调用真实企业微信 API。
+
+### access_token 管理
+
+继续使用现有 `core/wecom_client.py` 作为企业微信 API 入口。
+
+要求：
+
+- 通过 `corpid + corpsecret` 获取 `access_token`。
+- 缓存 token，按 `expires_in` 提前 5-10 分钟刷新。
+- 接口返回 `invalid access_token` 时允许刷新后重试一次。
+- 所有调用记录 `errcode`、`errmsg` 和业务上下文，但不记录敏感凭证。
+
+### OAuth 登录与账号绑定
+
+新增目标：企业微信内打开 AIPet 时，能识别当前企业成员并绑定到本地 `Staff`。
+
+建议新增接口：
+
+```text
+GET /wecom/oauth/start
+GET /wecom/oauth/callback
+```
+
+流程：
+
+```text
+用户进入企业微信应用
+ -> AIPet 跳转企业微信 OAuth
+ -> 企业微信回调并携带 code
+ -> 后端用 code + access_token 换取 UserID
+ -> 查询或创建本地 Staff 绑定
+ -> 写入登录态
+ -> 跳转 Web 工作台
+```
+
+建议扩展 `Staff`：
+
+```python
+wecom_userid: Mapped[str | None]
+wecom_corp_id: Mapped[str | None]
+wecom_name: Mapped[str | None]
+wecom_avatar: Mapped[str | None]
+wecom_bound_at: Mapped[datetime | None]
+```
+
+验收标准：
+
+- 企业微信内可完成 OAuth 登录。
+- 后端能正确拿到企业微信 `UserID`。
+- `UserID` 能绑定到本地 `Staff`。
+- 非当前企业 `corp_id` 的登录请求会被拒绝。
+
+### 内部应用消息
+
+当前项目已经完成内部推送闭环，后续保持以下边界：
+
+- 内部应用消息只发给店员，不直接发给外部客户。
+- 所有发送动作必须通过 `PushTask` 记录。
+- `send-internal` 默认支持 `--dry-run`。
+- 真实发送必须要求 `WECOM_INTERNAL_NOTIFY_ENABLED=true`。
+- 失败必须写回 `PushTask.error_message`。
+
+后续可增加消息类型：
+
+- 文本消息。
+- Markdown 消息。
+- 任务卡片消息，用于店员确认或跳转工作台。
+
+### 回调事件
+
+新增目标：接收企业微信事件，先完成验证、解密、落库，再逐步驱动业务。
+
+建议新增接口：
+
+```text
+GET  /wecom/callback   # URL 验证
+POST /wecom/callback   # 事件接收
+```
+
+要求：
+
+- 校验 `msg_signature`。
+- 使用 `EncodingAESKey` 解密消息。
+- 解析事件类型。
+- 原始事件和解密后事件均落库。
+- 事件处理失败不影响企业微信回包，失败原因进入日志。
+
+建议新增表：
+
+```text
+wecom_event_logs
+- id
+- corp_id
+- event_type
+- from_user
+- raw_payload
+- decrypted_payload
+- process_status
+- error_message
+- received_at
+```
+
+第一版只处理：
+
+- URL 验证。
+- 事件落库。
+- 用户进入应用或点击菜单事件。
+
+暂不直接把回调事件用于客户侧自动触达。
+
+### 通讯录同步
+
+新增目标：减少手工维护店员企业微信 UserID。
+
+建议流程：
+
+```text
+定时任务
+ -> 拉取部门列表
+ -> 拉取部门成员
+ -> 按 corp_id + userid upsert Staff 绑定信息
+ -> 标记禁用或离职成员
+```
+
+要求：
+
+- 同步任务默认关闭：`WECOM_CONTACT_SYNC_ENABLED=false`。
+- 同步只更新企业微信身份字段，不覆盖门店业务字段。
+- 删除或离职成员只标记状态，不物理删除。
+
+### 客户联系与群发
+
+客户侧触达继续作为第二阶段能力，必须受以下策略保护：
+
+- `WECOM_CUSTOMER_SEND_ENABLED=true` 才允许真实调用客户侧 API。
+- 客户必须有 `external_userid`。
+- 客户必须满足 `push_consent_status="granted"`。
+- `do_not_disturb=True` 时禁止发送。
+- 医疗、诊断、用药、治疗相关内容禁止自动客户侧发送。
+- 每次客户侧发送必须先生成任务并经过人工确认。
+
+客户侧发送计划继续以 `Task 8: Customer Contact Group Send Design Stub` 为入口，不和内部应用消息混用。
+
+### SaaS 多企业扩展预留
+
+如果 AIPet 后续改为多企业 SaaS，需要新增多租户层：
+
+```text
+wecom_tenants
+- id
+- corp_id
+- agent_id
+- auth_type
+- permanent_code
+- status
+- authorized_at
+- revoked_at
+```
+
+所有企业微信相关表必须带 `corp_id` 或 `tenant_id`：
+
+- `Staff`
+- `PushTask`
+- `wecom_event_logs`
+- `wecom_message_logs`
+- 客户外部联系人绑定表
+
+在切换到第三方服务商模式前，不要把 `corp_id` 假设为全局唯一常量散落在业务代码中，应通过配置或租户上下文传入。
+
+### 实施顺序
+
+新增任务建议排在已完成的内部推送闭环之后：
+
+```text
+Task 9: OAuth 登录与 Staff 绑定（已完成 2026-06-18）
+Task 10: 企业微信回调 URL 验证与事件落库
+Task 11: 通讯录成员同步
+Task 12: Markdown/任务卡片消息
+Task 13: 多企业 SaaS 化设计预留
+```
+
+### Task 9: OAuth 登录与 Staff 绑定（已完成 2026-06-18）
+
+**Files:**
+
+- Modified: `core/wecom_client.py`
+- Modified: `app/config.py`
+- Modified: `app/models.py`
+- Modified: `app/database.py`
+- Modified: `web/app.py`
+- Modified: `.env.example`
+- Created: `services/wecom_oauth.py`
+- Tests: `tests/test_core/test_wecom_client.py`
+- Tests: `tests/test_services/test_wecom_oauth.py`
+- Tests: `tests/test_web_wecom_oauth.py`
+
+已实现：
+
+- `WeComClient.get_oauth_userid(code)` 调用企业微信 OAuth 用户信息接口获取 `UserID`。
+- `WeComClient.get_user_detail(userid)` 获取企业微信成员详情，用于绑定展示字段。
+- `Staff` 增加 `wecom_corp_id`、`wecom_name`、`wecom_avatar`、`wecom_bound_at`。
+- SQLite 兼容迁移补齐新增 `staff` 字段。
+- `bind_wecom_staff()` 按 `wecom_userid` 更新已有店员，找不到时在首个门店下创建店员。
+- `GET /wecom/oauth/start` 生成企业微信 OAuth 跳转。
+- `GET /wecom/oauth/callback` 用 `code` 绑定店员，并设置 `aipet_staff_id` 和 `aipet_wecom_userid` HttpOnly cookie。
+- 新增配置：`WECOM_REDIRECT_URI`、`WECOM_OAUTH_ENABLED`、`WECOM_CALLBACK_ENABLED`、`WECOM_CONTACT_SYNC_ENABLED`。
+
+验证：
+
+```powershell
+uv run pytest tests/test_core/test_wecom_client.py tests/test_services/test_wecom_oauth.py tests/test_web_wecom_oauth.py -q
+```
+
+结果：
+
+```text
+8 passed
+```
+
+### 风险与验收
+
+主要风险：
+
+- 可信域名未配置导致 OAuth 回调失败。
+- 应用可见范围不包含目标店员导致无法登录或收不到消息。
+- 可信 IP 未配置导致 API 调用失败。
+- access_token 重复获取导致限流。
+- 回调加解密实现不完整导致验签失败。
+- 客户侧能力绕过人工确认和合规策略。
+
+最终验收：
+
+- 店员可通过企业微信 OAuth 进入 AIPet。
+- 店员 `Staff.wecom_userid` 可自动绑定或同步。
+- 内部应用消息仍通过 `PushTask` 发送和审计。
+- 企业微信回调 URL 验证通过。
+- POST 事件可验签、解密、落库。
+- 客户侧真实发送默认关闭，且受授权、免打扰、频控和内容安全策略保护。
 
 ## File Structure
 

@@ -34,6 +34,10 @@ class Staff(Base):
     phone: Mapped[str | None] = mapped_column(String(40))
     status: Mapped[str] = mapped_column(String(20), default="启用")
     wecom_userid: Mapped[str | None] = mapped_column(String(120))
+    wecom_corp_id: Mapped[str | None] = mapped_column(String(120))
+    wecom_name: Mapped[str | None] = mapped_column(String(120))
+    wecom_avatar: Mapped[str | None] = mapped_column(String(255))
+    wecom_bound_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class Customer(Base):

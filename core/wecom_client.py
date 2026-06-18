@@ -9,11 +9,14 @@ import httpx
 
 TokenFetcher = Callable[[str, str], dict[str, Any]]
 JsonPoster = Callable[[str, dict[str, Any]], dict[str, Any]]
+JsonGetter = Callable[[str, dict[str, Any]], dict[str, Any]]
 
 
 class WeComClient:
     token_url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken"
     message_send_url = "https://qyapi.weixin.qq.com/cgi-bin/message/send"
+    oauth_userinfo_url = "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo"
+    user_detail_url = "https://qyapi.weixin.qq.com/cgi-bin/user/get"
 
     def __init__(
         self,
@@ -22,12 +25,14 @@ class WeComClient:
         agent_id: str = "",
         token_fetcher: TokenFetcher | None = None,
         post_json: JsonPoster | None = None,
+        get_json: JsonGetter | None = None,
     ):
         self.corp_id = corp_id
         self.app_secret = app_secret
         self.agent_id = agent_id
         self.token_fetcher = token_fetcher or self._fetch_token
         self.post_json = post_json or self._post_json
+        self.get_json = get_json or self._get_json
         self._cached_token: str | None = None
         self._token_expires_at = 0.0
         self.last_error: str | None = None
@@ -73,6 +78,39 @@ class WeComClient:
         }
         return self.post_json(f"{self.message_send_url}?access_token={token}", payload)
 
+    def get_oauth_userid(self, code: str) -> str | None:
+        token = self.get_access_token()
+        if not token:
+            return None
+
+        payload = self.get_json(self.oauth_userinfo_url, {"access_token": token, "code": code})
+        errcode = int(payload.get("errcode") or 0)
+        if errcode != 0:
+            self.last_error = payload.get("errmsg") or f"wecom oauth error {errcode}"
+            return None
+
+        userid = payload.get("UserId") or payload.get("userid")
+        if not userid:
+            self.last_error = "missing wecom oauth UserId"
+            return None
+
+        self.last_error = None
+        return str(userid)
+
+    def get_user_detail(self, userid: str) -> dict[str, Any]:
+        token = self.get_access_token()
+        if not token:
+            return {}
+
+        payload = self.get_json(self.user_detail_url, {"access_token": token, "userid": userid})
+        errcode = int(payload.get("errcode") or 0)
+        if errcode != 0:
+            self.last_error = payload.get("errmsg") or f"wecom user detail error {errcode}"
+            return {}
+
+        self.last_error = None
+        return payload
+
     def _fetch_token(self, corp_id: str, app_secret: str) -> dict[str, Any]:
         response = httpx.get(
             self.token_url,
@@ -84,5 +122,10 @@ class WeComClient:
 
     def _post_json(self, url: str, payload: dict[str, Any]) -> dict[str, Any]:
         response = httpx.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        return response.json()
+
+    def _get_json(self, url: str, params: dict[str, Any]) -> dict[str, Any]:
+        response = httpx.get(url, params=params, timeout=10)
         response.raise_for_status()
         return response.json()
