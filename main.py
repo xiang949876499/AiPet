@@ -10,8 +10,10 @@ from agents.sample import SampleAgent
 from app.models import Appointment, ContentItem, Customer, FollowTask, PushTask, SampleTrial, Store, SubscriptionPlan
 from core.wecom_client import WeComClient
 from seed_data import seed_demo_data
+from services.customer_import import import_customers_from_csv
 from services.push_tasks import create_internal_push_task
 from services.subscriptions import seed_subscription_plans
+from services.weekly_plan import build_7_day_ops_plan
 from services.wecom_push import send_push_task
 
 console = Console()
@@ -95,6 +97,31 @@ def customers_list_command():
         for customer in session.query(Customer).order_by(Customer.id).all():
             table.add_row(customer.name, customer.wechat_name or "", str(customer.visit_count))
         console.print(table)
+    finally:
+        session.close()
+
+
+@customers_group.command("import-csv")
+@click.option("--path", "csv_path", type=click.Path(exists=True, dir_okay=False), required=True)
+@click.option("--store-id", type=int)
+def customers_import_csv_command(csv_path: str, store_id: int | None):
+    init_db()
+    session = SessionLocal()
+    try:
+        if store_id is None:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            store_id = store.id if store else None
+        if store_id is None:
+            console.print("没有可导入的门店，请先创建或导入演示数据")
+            return
+        result = import_customers_from_csv(session, store_id, csv_path)
+        console.print(
+            "导入客户完成："
+            f"新增客户 {result['created_customers']}，"
+            f"更新客户 {result['updated_customers']}，"
+            f"新增宠物 {result['created_pets']}，"
+            f"跳过 {result['skipped']}"
+        )
     finally:
         session.close()
 
@@ -199,6 +226,42 @@ def content_list_command():
         table.add_column("正文")
         for item in session.query(ContentItem).order_by(ContentItem.created_at.desc()).all():
             table.add_row(item.channel, item.title, item.body)
+        console.print(table)
+    finally:
+        session.close()
+
+
+@cli.group("ops")
+def ops_group():
+    pass
+
+
+@ops_group.command("plan-7-days")
+@click.option("--store-id", type=int)
+def ops_plan_7_days_command(store_id: int | None):
+    init_db()
+    session = SessionLocal()
+    try:
+        if store_id is None:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            store_id = store.id if store else None
+        if store_id is None:
+            console.print("没有可生成计划的门店，请先创建或导入演示数据")
+            return
+        table = Table(title="7 天运营计划")
+        table.add_column("日期")
+        table.add_column("渠道")
+        table.add_column("客户重点")
+        table.add_column("内容主题")
+        table.add_column("建议动作")
+        for item in build_7_day_ops_plan(session, store_id):
+            table.add_row(
+                item["date"],
+                item["channel"],
+                item["customer_focus"],
+                item["content_topic"],
+                item["suggested_action"],
+            )
         console.print(table)
     finally:
         session.close()

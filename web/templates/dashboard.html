@@ -88,6 +88,7 @@
       <div class="plan">
         <span>当前订阅</span>
         <strong>{{ subscription.plan_name }}</strong>
+        <p>{{ subscription.status_label }}{% if subscription.trial_days_left > 0 %} · 试用剩余 {{ subscription.trial_days_left }} 天{% endif %}</p>
         <p>剩余 AI 额度 {{ subscription.remaining_ai_quota }}</p>
         <div class="features">
           {% for feature in subscription.features %}
@@ -141,6 +142,26 @@
                 <td>{{ task.pet.name }}</td>
                 <td>{{ task.reason }}</td>
                 <td class="message">{{ task.ai_message }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>7 天运营计划</h2>
+          <table>
+            <thead>
+              <tr><th>日期</th><th>渠道</th><th>客户重点</th><th>主题</th><th>建议动作</th></tr>
+            </thead>
+            <tbody>
+              {% for item in weekly_plan %}
+              <tr>
+                <td>{{ item.date }}</td>
+                <td><span class="tag content">{{ item.channel }}</span></td>
+                <td>{{ item.customer_focus }}</td>
+                <td>{{ item.content_topic }}</td>
+                <td>{{ item.suggested_action }}</td>
               </tr>
               {% endfor %}
             </tbody>

@@ -12,6 +12,26 @@
 - 首页升级为老板视角的 AI 运营工作台。
 - CLI 新增 `subscription plans`、`content generate`、`content list`。
 
+## 订阅化运营 Agent Phase 2 增量（2026-06-22）
+
+Phase 2 将订阅 MVP 补成可试点售卖闭环，重点是让真实门店能导入客户、看到一周运营安排，并验证套餐额度与试用状态：
+
+- 新增 CSV 客户导入服务，支持常用中文表头，并按门店内手机号幂等更新客户和宠物资料。
+- 新增 `customers import-csv --path <file>` CLI 命令，用于试点门店快速导入客户数据。
+- 新增 AI 额度消费与限制，`ContentAgent` 按新增内容草稿数扣减套餐额度，额度不足或试用到期时停止生成。
+- 新增订阅快照字段：`status_label`、`trial_days_left`，首页展示试用状态和剩余天数。
+- 新增 7 天运营计划服务，复用客户机会排序生成每日客户重点、内容渠道、主题和建议动作。
+- 新增 `ops plan-7-days` CLI 命令，便于销售演示和门店试点交付。
+- 首页新增“7 天运营计划”区块，配合今日客户机会和内容日历形成一周执行视图。
+
+Phase 2 验收命令：
+
+```powershell
+uv run pytest tests -q
+uv run python main.py customers import-csv --path .\customers.csv
+uv run python main.py ops plan-7-days
+```
+
 验证命令：
 
 ```powershell

@@ -82,3 +82,45 @@ def ensure_store_subscription(db_session, store_id: int, plan_code: str = "profe
     db_session.commit()
     db_session.refresh(subscription)
     return subscription
+
+
+def consume_ai_quota(db_session, store_id: int, units: int) -> bool:
+    if units <= 0:
+        return True
+    subscription = ensure_store_subscription(db_session, store_id)
+    refresh_subscription_status(subscription)
+    if subscription.status == "trial_expired":
+        db_session.commit()
+        return False
+    if subscription.remaining_ai_quota < units:
+        return False
+    subscription.ai_quota_used += units
+    db_session.commit()
+    return True
+
+
+def refresh_subscription_status(subscription: StoreSubscription, now: datetime | None = None) -> StoreSubscription:
+    current = now or datetime.utcnow()
+    if subscription.status == "trial" and subscription.trial_ends_at and subscription.trial_ends_at < current:
+        subscription.status = "trial_expired"
+    return subscription
+
+
+def subscription_status_label(subscription: StoreSubscription) -> str:
+    refresh_subscription_status(subscription)
+    return {
+        "trial": "试用中",
+        "trial_expired": "试用已到期",
+        "active": "付费中",
+        "past_due": "待续费",
+        "cancelled": "已取消",
+    }.get(subscription.status, subscription.status)
+
+
+def trial_days_left(subscription: StoreSubscription, now: datetime | None = None) -> int:
+    if not subscription.trial_ends_at:
+        return 0
+    current = now or datetime.utcnow()
+    if subscription.trial_ends_at < current:
+        return 0
+    return max((subscription.trial_ends_at.date() - current.date()).days, 0)

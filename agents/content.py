@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models import ContentItem, Store
 from core.llm import LLMClient
+from services.subscriptions import consume_ai_quota
 
 
 class ContentAgent:
@@ -19,11 +20,13 @@ class ContentAgent:
         if store is None:
             return {"created": 0}
 
+        channels_to_create = [channel for channel in self.channels if not self._has_today_content(store.id, channel)]
+        if channels_to_create and not consume_ai_quota(self.db_session, store.id, len(channels_to_create)):
+            return {"created": 0, "quota_blocked": True}
+
         created = 0
         base_time = datetime.utcnow()
-        for index, channel in enumerate(self.channels):
-            if self._has_today_content(store.id, channel):
-                continue
+        for index, channel in enumerate(channels_to_create):
             title, body = self._generate(channel, store.name)
             self.db_session.add(
                 ContentItem(

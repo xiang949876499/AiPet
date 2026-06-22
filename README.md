@@ -10,6 +10,9 @@
 - AI/模板话术生成，支持无 API Key 离线运行
 - 自媒体内容日历，支持朋友圈、小红书、短视频脚本草稿
 - 订阅套餐配置，默认主推专业版 ¥499/月
+- 7 天运营计划，按客户机会生成每日触达和内容主题
+- CSV 客户导入，支持按手机号幂等更新客户和宠物资料
+- 试用期状态和 AI 生成额度限制
 - 运营看板：客户机会、触达任务、内容产出、预计挽回营业额
 - 企业微信内部应用通知任务，支持 dry-run 和发送状态回写
 - CLI 工作台和 Web 今日工作台
@@ -32,8 +35,10 @@ uv run python main.py seed
 uv run python main.py dashboard
 uv run python main.py reminders pending
 uv run python main.py subscription plans
+uv run python main.py customers import-csv --path .\customers.csv
 uv run python main.py content generate
 uv run python main.py content list
+uv run python main.py ops plan-7-days
 uv run python main.py push list
 uv run python main.py push send-internal --dry-run
 ```
@@ -54,10 +59,20 @@ http://localhost:8000/push-tasks
 首页现在是老板视角的 **AI 运营工作台**，包含：
 
 - 当前订阅套餐和剩余 AI 额度
+- 试用期状态和剩余天数
 - 今日客户机会和可复制话术
 - 今日运营任务
 - 今日内容日历
+- 7 天运营计划
 - 本周触达任务、本周内容产出、预计挽回营业额
+
+CSV 导入支持以下常用表头：
+
+```text
+客户姓名,手机号,微信名,宠物名,宠物类型,品种,洗护周期天数,最近到店
+```
+
+重复导入时，系统会优先按门店内手机号匹配客户，并更新微信名、最近到店和宠物洗护周期，避免产生重复客户。
 
 ## 订阅套餐
 
@@ -71,6 +86,8 @@ http://localhost:8000/push-tasks
 | 代运营包 | ¥1999/月起 | 没时间执行的老板 | 内容规划、活动策划、素材托管 |
 
 演示数据会自动为门店创建专业版试用订阅。
+
+内容生成会按实际新增草稿数消耗套餐 AI 额度。额度耗尽或试用到期时，系统不会继续生成新内容草稿。
 
 ## 企业微信内部通知
 

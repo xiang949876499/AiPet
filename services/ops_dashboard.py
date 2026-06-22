@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from app.models import ContentItem, Customer, FollowTask, Pet, ServiceRecord, StoreSubscription
+from services.subscriptions import subscription_status_label, trial_days_left
 
 
 def build_customer_opportunities(db_session, store_id: int, limit: int = 8) -> list[dict]:
@@ -90,12 +91,22 @@ def build_subscription_snapshot(db_session, store_id: int) -> dict:
         .first()
     )
     if subscription is None:
-        return {"plan_name": "未配置", "status": "inactive", "remaining_ai_quota": 0}
+        return {
+            "plan_name": "未配置",
+            "status": "inactive",
+            "status_label": "未配置",
+            "remaining_ai_quota": 0,
+            "trial_days_left": 0,
+            "features": [],
+        }
+    status_label = subscription_status_label(subscription)
     return {
         "plan_name": subscription.plan.name,
         "status": subscription.status,
+        "status_label": status_label,
         "monthly_price": subscription.plan.monthly_price,
         "remaining_ai_quota": subscription.remaining_ai_quota,
+        "trial_days_left": trial_days_left(subscription),
         "trial_ends_at": subscription.trial_ends_at,
         "features": subscription.plan.features.split(",") if subscription.plan.features else [],
     }

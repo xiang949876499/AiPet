@@ -13,6 +13,7 @@ from app.models import ContentItem, Customer, FollowTask, PushTask, Store
 from core.wecom_client import WeComClient
 from services.ops_dashboard import build_customer_opportunities, build_ops_metrics, build_subscription_snapshot
 from services.subscriptions import ensure_store_subscription
+from services.weekly_plan import build_7_day_ops_plan
 from services.wecom_oauth import bind_wecom_staff
 
 templates = Jinja2Templates(directory="web/templates")
@@ -61,7 +62,14 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
                         "tasks": [],
                         "opportunities": [],
                         "content_items": [],
-                        "subscription": {"plan_name": "未配置", "remaining_ai_quota": 0, "features": []},
+                        "weekly_plan": [],
+                        "subscription": {
+                            "plan_name": "未配置",
+                            "remaining_ai_quota": 0,
+                            "features": [],
+                            "status_label": "未配置",
+                            "trial_days_left": 0,
+                        },
                         "app_name": "宠物店 AI 运营 Agent",
                     },
                 )
@@ -88,6 +96,7 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
                     "ops_metrics": build_ops_metrics(session, store.id),
                     "subscription": build_subscription_snapshot(session, store.id),
                     "opportunities": build_customer_opportunities(session, store.id),
+                    "weekly_plan": build_7_day_ops_plan(session, store.id),
                     "content_items": content_items,
                     "tasks": tasks,
                     "app_name": "宠物店 AI 运营 Agent",
