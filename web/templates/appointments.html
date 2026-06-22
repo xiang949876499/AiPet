@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>预约管理 - {{ app_name }}</title>
+  <style>
+    body { margin: 0; background: #fbfcf8; color: #17211d; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
+    header, main { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    header { border-bottom: 1px solid #dce5df; }
+    a { color: #1f7a4d; text-decoration: none; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dce5df; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #dce5df; text-align: left; vertical-align: top; }
+    th { color: #5f6d66; font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .status { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #1f7a4d; color: #fff; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">返回工作台</a>
+    <h1>预约管理</h1>
+    <p>查看今日和未来预约，便于和复购提醒一起安排跟进节奏。</p>
+  </header>
+  <main>
+    <table>
+      <thead>
+        <tr><th>客户</th><th>宠物</th><th>服务</th><th>开始时间</th><th>结束时间</th><th>状态</th></tr>
+      </thead>
+      <tbody>
+        {% for appointment in appointments %}
+        <tr>
+          <td>{{ appointment.customer_name }}</td>
+          <td>{{ appointment.pet_name }}</td>
+          <td>{{ appointment.service_type }}</td>
+          <td>{{ appointment.start_time.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td>{{ appointment.end_time.strftime("%Y-%m-%d %H:%M") if appointment.end_time else "" }}</td>
+          <td><span class="status">{{ appointment.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

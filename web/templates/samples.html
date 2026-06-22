@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>试用装管理 - {{ app_name }}</title>
+  <style>
+    body { margin: 0; background: #fbfcf8; color: #17211d; font-family: "Microsoft YaHei", "Segoe UI", sans-serif; }
+    header, main { max-width: 1120px; margin: 0 auto; padding: 24px; }
+    header { border-bottom: 1px solid #dce5df; }
+    a { color: #1f7a4d; text-decoration: none; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #dce5df; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #dce5df; text-align: left; vertical-align: top; }
+    th { color: #5f6d66; font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .yes { color: #1f7a4d; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">返回工作台</a>
+    <h1>试用装管理</h1>
+    <p>跟踪领取记录、回访反馈和转化金额。</p>
+  </header>
+  <main>
+    <table>
+      <thead>
+        <tr><th>客户</th><th>宠物</th><th>产品</th><th>领取时间</th><th>反馈</th><th>是否转化</th><th>转化金额</th></tr>
+      </thead>
+      <tbody>
+        {% for trial in trials %}
+        <tr>
+          <td>{{ trial.customer_name }}</td>
+          <td>{{ trial.pet_name }}</td>
+          <td>{{ trial.product_name }}</td>
+          <td>{{ trial.receive_time.strftime("%Y-%m-%d") }}</td>
+          <td>{{ trial.feedback or "待反馈" }}</td>
+          <td class="{% if trial.converted %}yes{% endif %}">{{ "已转化" if trial.converted else "未转化" }}</td>
+          <td>¥{{ trial.converted_amount or 0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

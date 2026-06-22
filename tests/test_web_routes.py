@@ -81,7 +81,8 @@ def test_api_can_mark_reminder_sent(tmp_path, monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["status"] == "已发送"
-    assert client.get("/api/reminders?status=pending").json() == []
+    pending_ids = [item["id"] for item in client.get("/api/reminders?status=pending").json()]
+    assert task["id"] not in pending_ids
 
 
 def test_web_pages_render_core_sections(tmp_path, monkeypatch):

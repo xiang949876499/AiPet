@@ -9,12 +9,13 @@ from agents.content import ContentAgent
 from agents.reminder import ReminderAgent
 from app.config import settings
 from app.database import SessionLocal, init_db
-from app.models import ContentItem, Customer, FollowTask, PushTask, Store
+from app.models import Appointment, ContentItem, Customer, FollowTask, Pet, Product, PushTask, SampleTrial, Store
 from core.wecom_client import WeComClient
 from services.ops_dashboard import build_customer_opportunities, build_ops_metrics, build_subscription_snapshot
 from services.subscriptions import ensure_store_subscription
 from services.weekly_plan import build_7_day_ops_plan
 from services.wecom_oauth import bind_wecom_staff
+from web.routes import appointments, customers, reminders, samples
 
 templates = Jinja2Templates(directory="web/templates")
 
@@ -40,6 +41,10 @@ def _create_wecom_client() -> WeComClient:
 
 def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
     app = FastAPI(title="宠物店 AI 复购提醒助手")
+    app.include_router(customers.router, prefix="/api/customers", tags=["customers"])
+    app.include_router(appointments.router, prefix="/api/appointments", tags=["appointments"])
+    app.include_router(reminders.router, prefix="/api/reminders", tags=["reminders"])
+    app.include_router(samples.router, prefix="/api/samples", tags=["samples"])
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard(request: Request):
@@ -125,6 +130,131 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
                 {
                     "tasks": tasks,
                     "status_labels": status_labels,
+                    "app_name": "宠物店 AI 复购提醒助手",
+                },
+            )
+        finally:
+            session.close()
+
+    @app.get("/customers", response_class=HTMLResponse)
+    def customers_page(request: Request):
+        init_db()
+        session = SessionLocal()
+        try:
+            records = session.query(Customer).order_by(Customer.id.asc()).all()
+            customers_data = [
+                {
+                    "id": customer.id,
+                    "name": customer.name,
+                    "phone": customer.phone,
+                    "wechat_name": customer.wechat_name,
+                    "visit_count": customer.visit_count,
+                    "last_visit_time": customer.last_visit_time,
+                    "pet_names": [pet.name for pet in customer.pets],
+                }
+                for customer in records
+            ]
+            return templates.TemplateResponse(
+                request,
+                "customers.html",
+                {"customers": customers_data, "app_name": "宠物店 AI 复购提醒助手"},
+            )
+        finally:
+            session.close()
+
+    @app.get("/appointments", response_class=HTMLResponse)
+    def appointments_page(request: Request):
+        init_db()
+        session = SessionLocal()
+        try:
+            records = session.query(Appointment).order_by(Appointment.start_time.asc()).all()
+            customers_by_id = {customer.id: customer for customer in session.query(Customer).all()}
+            pets_by_id = {pet.id: pet for pet in session.query(Pet).all()}
+            appointments_data = [
+                {
+                    "id": appointment.id,
+                    "customer_name": customers_by_id.get(appointment.customer_id).name
+                    if customers_by_id.get(appointment.customer_id)
+                    else "",
+                    "pet_name": pets_by_id.get(appointment.pet_id).name if pets_by_id.get(appointment.pet_id) else "",
+                    "service_type": appointment.service_type,
+                    "start_time": appointment.start_time,
+                    "end_time": appointment.end_time,
+                    "status": appointment.status,
+                }
+                for appointment in records
+            ]
+            return templates.TemplateResponse(
+                request,
+                "appointments.html",
+                {
+                    "appointments": appointments_data,
+                    "app_name": "宠物店 AI 复购提醒助手",
+                },
+            )
+        finally:
+            session.close()
+
+    @app.get("/reminders", response_class=HTMLResponse)
+    def reminders_page(request: Request):
+        init_db()
+        session = SessionLocal()
+        try:
+            ReminderAgent(session).execute({})
+            tasks = session.query(FollowTask).order_by(FollowTask.created_at.desc(), FollowTask.id.desc()).all()
+            task_data = [
+                {
+                    "id": task.id,
+                    "customer_name": task.customer.name,
+                    "pet_name": task.pet.name,
+                    "task_type": task.task_type,
+                    "priority": task.priority,
+                    "reason": task.reason,
+                    "suggested_action": task.suggested_action,
+                    "status": task.status,
+                    "ai_message": task.ai_message,
+                }
+                for task in tasks
+            ]
+            return templates.TemplateResponse(
+                request,
+                "reminders.html",
+                {"tasks": task_data, "app_name": "宠物店 AI 复购提醒助手"},
+            )
+        finally:
+            session.close()
+
+    @app.get("/samples", response_class=HTMLResponse)
+    def samples_page(request: Request):
+        init_db()
+        session = SessionLocal()
+        try:
+            trials = session.query(SampleTrial).order_by(SampleTrial.receive_time.desc(), SampleTrial.id.desc()).all()
+            products_by_id = {product.id: product for product in session.query(Product).all()}
+            customers_by_id = {customer.id: customer for customer in session.query(Customer).all()}
+            pets_by_id = {pet.id: pet for pet in session.query(Pet).all()}
+            trials_data = [
+                {
+                    "id": trial.id,
+                    "customer_name": customers_by_id.get(trial.customer_id).name
+                    if customers_by_id.get(trial.customer_id)
+                    else "",
+                    "pet_name": pets_by_id.get(trial.pet_id).name if pets_by_id.get(trial.pet_id) else "",
+                    "product_name": products_by_id.get(trial.product_id).name
+                    if trial.product_id and products_by_id.get(trial.product_id)
+                    else "",
+                    "receive_time": trial.receive_time,
+                    "feedback": trial.feedback,
+                    "converted": trial.converted,
+                    "converted_amount": trial.converted_amount,
+                }
+                for trial in trials
+            ]
+            return templates.TemplateResponse(
+                request,
+                "samples.html",
+                {
+                    "trials": trials_data,
                     "app_name": "宠物店 AI 复购提醒助手",
                 },
             )
