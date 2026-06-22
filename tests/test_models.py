@@ -74,3 +74,43 @@ def test_push_task_records_channel_receiver_and_status(db_session, sample_record
     assert saved.status == "pending"
     assert saved.channel == "wecom_internal"
     assert saved.receiver_id == "zhang_staff"
+
+
+def test_subscription_and_content_models_record_ops_agent_state(db_session, sample_records):
+    from datetime import datetime, timedelta
+
+    from app.models import ContentItem, StoreSubscription, SubscriptionPlan
+
+    plan = SubscriptionPlan(
+        code="professional",
+        name="专业版",
+        monthly_price=499,
+        annual_price=4990,
+        ai_quota_monthly=300,
+        features="企业微信,内容日历,客户分层,复购追踪",
+        is_recommended=True,
+    )
+    subscription = StoreSubscription(
+        store_id=sample_records["store"].id,
+        plan=plan,
+        status="trial",
+        trial_ends_at=datetime.utcnow() + timedelta(days=7),
+        ai_quota_used=12,
+    )
+    content = ContentItem(
+        store_id=sample_records["store"].id,
+        channel="朋友圈",
+        topic="洗护复购提醒",
+        title="本周毛孩子洗护提醒",
+        body="天气热了，记得给毛孩子安排一次清爽洗护。",
+        status="draft",
+        scheduled_at=datetime.utcnow(),
+    )
+    db_session.add_all([plan, subscription, content])
+    db_session.commit()
+
+    saved = db_session.query(StoreSubscription).one()
+    assert saved.plan.code == "professional"
+    assert saved.plan.monthly_price == 499
+    assert saved.remaining_ai_quota == 288
+    assert db_session.query(ContentItem).one().channel == "朋友圈"

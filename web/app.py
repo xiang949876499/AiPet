@@ -5,11 +5,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from agents.content import ContentAgent
 from agents.reminder import ReminderAgent
 from app.config import settings
 from app.database import SessionLocal, init_db
-from app.models import Customer, FollowTask, PushTask
+from app.models import ContentItem, Customer, FollowTask, PushTask, Store
 from core.wecom_client import WeComClient
+from services.ops_dashboard import build_customer_opportunities, build_ops_metrics, build_subscription_snapshot
+from services.subscriptions import ensure_store_subscription
 from services.wecom_oauth import bind_wecom_staff
 
 templates = Jinja2Templates(directory="web/templates")
@@ -42,16 +45,53 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
         init_db()
         session = SessionLocal()
         try:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            if store is None:
+                return templates.TemplateResponse(
+                    request,
+                    "dashboard.html",
+                    {
+                        "metrics": {"customers": 0, "pending_tasks": 0},
+                        "ops_metrics": {
+                            "weekly_touch_tasks": 0,
+                            "weekly_content_items": 0,
+                            "monthly_repurchase_customers": 0,
+                            "estimated_recovered_revenue": 0,
+                        },
+                        "tasks": [],
+                        "opportunities": [],
+                        "content_items": [],
+                        "subscription": {"plan_name": "未配置", "remaining_ai_quota": 0, "features": []},
+                        "app_name": "宠物店 AI 运营 Agent",
+                    },
+                )
+            ensure_store_subscription(session, store.id)
             ReminderAgent(session).execute({})
+            ContentAgent(session).execute({"store_id": store.id})
             metrics = {
                 "customers": session.query(Customer).count(),
                 "pending_tasks": session.query(FollowTask).filter_by(status="待处理").count(),
             }
             tasks = session.query(FollowTask).filter_by(status="待处理").all()
+            content_items = (
+                session.query(ContentItem)
+                .filter_by(store_id=store.id)
+                .order_by(ContentItem.scheduled_at.asc().nullslast(), ContentItem.created_at.desc())
+                .limit(6)
+                .all()
+            )
             return templates.TemplateResponse(
                 request,
                 "dashboard.html",
-                {"metrics": metrics, "tasks": tasks, "app_name": "宠物店 AI 复购提醒助手"},
+                {
+                    "metrics": metrics,
+                    "ops_metrics": build_ops_metrics(session, store.id),
+                    "subscription": build_subscription_snapshot(session, store.id),
+                    "opportunities": build_customer_opportunities(session, store.id),
+                    "content_items": content_items,
+                    "tasks": tasks,
+                    "app_name": "宠物店 AI 运营 Agent",
+                },
             )
         finally:
             session.close()

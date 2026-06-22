@@ -2,37 +2,165 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ app_name }}</title>
   <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2937; }
-    h1 { font-size: 28px; margin-bottom: 16px; }
-    .metrics { display: flex; gap: 16px; margin-bottom: 24px; }
-    .metric { border: 1px solid #d1d5db; border-radius: 8px; padding: 14px 18px; min-width: 140px; }
-    .number { font-size: 28px; font-weight: 700; }
+    :root {
+      color-scheme: light;
+      --ink: #17211d;
+      --muted: #5f6d66;
+      --line: #dce5df;
+      --paper: #fbfcf8;
+      --surface: #ffffff;
+      --leaf: #1f7a4d;
+      --clay: #9c5b34;
+      --sun: #f0bd45;
+      --blue: #2f6f9f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, #fffdf6, #f2f8f1);
+      padding: 28px 32px 24px;
+    }
+    main { padding: 24px 32px 40px; max-width: 1280px; margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    p { margin: 0; color: var(--muted); }
+    .topline { display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; max-width: 1280px; margin: 0 auto; }
+    .plan { text-align: right; min-width: 220px; }
+    .plan strong { display: block; font-size: 20px; color: var(--leaf); }
+    .metric-grid { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .metric {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      min-height: 92px;
+    }
+    .metric span { color: var(--muted); font-size: 13px; }
+    .metric b { display: block; margin-top: 8px; font-size: 28px; }
+    .layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
     table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 10px; vertical-align: top; }
+    th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 10px 8px; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    .tag { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; color: #fff; background: var(--leaf); white-space: nowrap; }
+    .tag.dormant { background: var(--clay); }
+    .tag.content { background: var(--blue); }
+    .message { color: var(--ink); max-width: 360px; }
+    .content-list { display: grid; gap: 12px; }
+    .content-row { border-left: 3px solid var(--sun); padding: 8px 0 8px 12px; }
+    .content-row h3 { margin: 0 0 4px; font-size: 15px; }
+    .content-row small { color: var(--muted); }
+    .features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+    .feature { border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--muted); background: #fff; }
+    @media (max-width: 900px) {
+      header, main { padding-left: 18px; padding-right: 18px; }
+      .topline { align-items: flex-start; flex-direction: column; }
+      .plan { text-align: left; }
+      .metric-grid, .layout { grid-template-columns: 1fr; }
+      .features { justify-content: flex-start; }
+    }
   </style>
 </head>
 <body>
-  <h1>今日工作台</h1>
-  <div class="metrics">
-    <div class="metric"><div>客户数</div><div class="number">{{ metrics.customers }}</div></div>
-    <div class="metric"><div>待跟进</div><div class="number">{{ metrics.pending_tasks }}</div></div>
-  </div>
-  <table>
-    <thead>
-      <tr><th>客户</th><th>宠物</th><th>原因</th><th>话术</th></tr>
-    </thead>
-    <tbody>
-      {% for task in tasks %}
-      <tr>
-        <td>{{ task.customer.name }}</td>
-        <td>{{ task.pet.name }}</td>
-        <td>{{ task.reason }}</td>
-        <td>{{ task.ai_message }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <header>
+    <div class="topline">
+      <div>
+        <h1>AI 运营工作台</h1>
+        <p>今日工作台：由宠物店 AI 复购提醒助手升级，每天帮老板找客户、写话术、排内容，先确认再触达。</p>
+      </div>
+      <div class="plan">
+        <span>当前订阅</span>
+        <strong>{{ subscription.plan_name }}</strong>
+        <p>剩余 AI 额度 {{ subscription.remaining_ai_quota }}</p>
+        <div class="features">
+          {% for feature in subscription.features %}
+          <span class="feature">{{ feature }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="metric-grid">
+      <div class="metric"><span>客户总数</span><b>{{ metrics.customers }}</b></div>
+      <div class="metric"><span>待跟进任务</span><b>{{ metrics.pending_tasks }}</b></div>
+      <div class="metric"><span>本周触达任务</span><b>{{ ops_metrics.weekly_touch_tasks }}</b></div>
+      <div class="metric"><span>本周内容产出</span><b>{{ ops_metrics.weekly_content_items }}</b></div>
+      <div class="metric"><span>预计挽回营业额</span><b>¥{{ ops_metrics.estimated_recovered_revenue }}</b></div>
+    </div>
+
+    <div class="layout">
+      <div>
+        <section>
+          <h2>今日客户机会</h2>
+          <table>
+            <thead>
+              <tr><th>客户</th><th>分层</th><th>原因</th><th>建议动作</th><th>可复制话术</th></tr>
+            </thead>
+            <tbody>
+              {% for item in opportunities %}
+              <tr>
+                <td>{{ item.customer_name }} / {{ item.pet_name }}</td>
+                <td><span class="tag {% if item.segment == '沉睡客户' %}dormant{% endif %}">{{ item.segment }}</span></td>
+                <td>{{ item.reason }}</td>
+                <td>{{ item.suggested_action }}</td>
+                <td class="message">{{ item.message }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>今日运营任务</h2>
+          <table>
+            <thead>
+              <tr><th>客户</th><th>宠物</th><th>原因</th><th>话术</th></tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr>
+                <td>{{ task.customer.name }}</td>
+                <td>{{ task.pet.name }}</td>
+                <td>{{ task.reason }}</td>
+                <td class="message">{{ task.ai_message }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <section>
+        <h2>今日内容日历</h2>
+        <div class="content-list">
+          {% for item in content_items %}
+          <div class="content-row">
+            <small><span class="tag content">{{ item.channel }}</span> {{ item.topic }}</small>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.body }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </main>
 </body>
 </html>

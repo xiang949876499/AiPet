@@ -1,6 +1,6 @@
-# 宠物店 AI 复购提醒助手
+# 宠物店 AI 运营 Agent
 
-宠物店 AI 复购提醒助手是一个面向宠物门店的轻量级私域运营工具。第一版聚焦一个问题：店员每天应该联系哪些客户、为什么联系、微信该怎么说。
+宠物店 AI 运营 Agent 是一个面向社区单店宠物店老板的轻量级私域运营工具。它不做完整收银、进销存或硬件管理，而是聚焦一个更直接的问题：老板每天应该维护哪些客户、为什么联系、微信该怎么说、今天该发什么自媒体内容。
 
 ## 功能
 
@@ -8,6 +8,9 @@
 - 洗护到期与沉睡客户复购提醒
 - 试用装回访任务生成
 - AI/模板话术生成，支持无 API Key 离线运行
+- 自媒体内容日历，支持朋友圈、小红书、短视频脚本草稿
+- 订阅套餐配置，默认主推专业版 ¥499/月
+- 运营看板：客户机会、触达任务、内容产出、预计挽回营业额
 - 企业微信内部应用通知任务，支持 dry-run 和发送状态回写
 - CLI 工作台和 Web 今日工作台
 - SQLite 本地数据库，后续可迁移到 PostgreSQL
@@ -28,6 +31,9 @@ uv run python main.py init-db
 uv run python main.py seed
 uv run python main.py dashboard
 uv run python main.py reminders pending
+uv run python main.py subscription plans
+uv run python main.py content generate
+uv run python main.py content list
 uv run python main.py push list
 uv run python main.py push send-internal --dry-run
 ```
@@ -44,6 +50,27 @@ uv run uvicorn web.app:app --reload
 http://localhost:8000
 http://localhost:8000/push-tasks
 ```
+
+首页现在是老板视角的 **AI 运营工作台**，包含：
+
+- 当前订阅套餐和剩余 AI 额度
+- 今日客户机会和可复制话术
+- 今日运营任务
+- 今日内容日历
+- 本周触达任务、本周内容产出、预计挽回营业额
+
+## 订阅套餐
+
+内置四档套餐：
+
+| 套餐 | 月付 | 目标客户 | 核心能力 |
+|---|---:|---|---|
+| 入门版 | ¥199/月 | 刚开始做私域的小店 | 客户提醒、基础话术、手动复制发送 |
+| 专业版 | ¥499/月 | 主力社区宠物店 | 企业微信、内容日历、客户分层、复购追踪 |
+| 增长版 | ¥999/月 | 重视私域增长的门店 | 活动 Agent、自媒体批量生成、月度报告 |
+| 代运营包 | ¥1999/月起 | 没时间执行的老板 | 内容规划、活动策划、素材托管 |
+
+演示数据会自动为门店创建专业版试用订阅。
 
 ## 企业微信内部通知
 

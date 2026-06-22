@@ -1,5 +1,23 @@
 # 宠物店 AI 复购提醒助手 Agent 实施计划
 
+## 订阅化运营 Agent 增量（2026-06-22）
+
+已将产品方向从单点复购提醒扩展为“宠物店 AI 运营 Agent”订阅 MVP：
+
+- 新增订阅套餐模型：入门版、专业版、增长版、代运营包，主推专业版 ¥499/月。
+- 新增门店订阅状态和 AI 月额度记录。
+- 新增自媒体内容日历模型，覆盖朋友圈、小红书、短视频脚本草稿。
+- 新增 `ContentAgent`，支持 LLM 生成内容，并在无 API Key 时使用离线兜底文案。
+- 新增客户机会与运营指标服务，支持客户分层、建议动作、可复制话术、预计挽回营业额。
+- 首页升级为老板视角的 AI 运营工作台。
+- CLI 新增 `subscription plans`、`content generate`、`content list`。
+
+验证命令：
+
+```powershell
+uv run pytest tests -q
+```
+
 > **给 agent 执行者：** 实施本计划时，建议使用 `superpowers:subagent-driven-development`，也可以使用 `superpowers:executing-plans` 按任务逐项执行。步骤使用 checkbox 语法，便于跟踪。工程代码级细节参考同目录下 `2026-06-17-pet-agent-implementation-plan.md`。
 
 **目标：** 做出第一版可交付的宠物门店私域运营 Agent，让店员每天知道「该联系谁、为什么联系、微信该怎么说」，并能记录跟进结果。

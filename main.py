@@ -2,14 +2,16 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from agents.content import ContentAgent
 from agents.reminder import ReminderAgent
 from app.config import settings
 from app.database import SessionLocal, init_db
 from agents.sample import SampleAgent
-from app.models import Appointment, Customer, FollowTask, PushTask, SampleTrial
+from app.models import Appointment, ContentItem, Customer, FollowTask, PushTask, SampleTrial, Store, SubscriptionPlan
 from core.wecom_client import WeComClient
 from seed_data import seed_demo_data
 from services.push_tasks import create_internal_push_task
+from services.subscriptions import seed_subscription_plans
 from services.wecom_push import send_push_task
 
 console = Console()
@@ -136,6 +138,67 @@ def sample_pending_command():
         trials = session.query(SampleTrial).filter(SampleTrial.follow_time.is_not(None)).all()
         for trial in trials:
             table.add_row(str(trial.customer_id), str(trial.pet_id), trial.feedback or "待反馈")
+        console.print(table)
+    finally:
+        session.close()
+
+
+@cli.group("subscription")
+def subscription_group():
+    pass
+
+
+@subscription_group.command("plans")
+def subscription_plans_command():
+    init_db()
+    session = SessionLocal()
+    try:
+        seed_subscription_plans(session)
+        table = Table(title="订阅套餐")
+        table.add_column("套餐")
+        table.add_column("月付")
+        table.add_column("年付")
+        table.add_column("AI额度")
+        table.add_column("能力")
+        for plan in session.query(SubscriptionPlan).order_by(SubscriptionPlan.monthly_price).all():
+            name = f"{plan.name}{'（推荐）' if plan.is_recommended else ''}"
+            table.add_row(name, str(plan.monthly_price), str(plan.annual_price), str(plan.ai_quota_monthly), plan.features)
+        console.print(table)
+    finally:
+        session.close()
+
+
+@cli.group("content")
+def content_group():
+    pass
+
+
+@content_group.command("generate")
+@click.option("--store-id", type=int)
+def content_generate_command(store_id: int | None):
+    init_db()
+    session = SessionLocal()
+    try:
+        if store_id is None:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            store_id = store.id if store else None
+        result = ContentAgent(session).execute({"store_id": store_id})
+        console.print(f"今日内容已生成：{result['created']} 条")
+    finally:
+        session.close()
+
+
+@content_group.command("list")
+def content_list_command():
+    init_db()
+    session = SessionLocal()
+    try:
+        table = Table(title="今日内容日历")
+        table.add_column("渠道")
+        table.add_column("标题")
+        table.add_column("正文")
+        for item in session.query(ContentItem).order_by(ContentItem.created_at.desc()).all():
+            table.add_row(item.channel, item.title, item.body)
         console.print(table)
     finally:
         session.close()

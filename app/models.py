@@ -22,6 +22,62 @@ class Store(Base):
 
     customers: Mapped[list["Customer"]] = relationship(back_populates="store")
     pets: Mapped[list["Pet"]] = relationship(back_populates="store")
+    subscriptions: Mapped[list["StoreSubscription"]] = relationship(back_populates="store")
+    content_items: Mapped[list["ContentItem"]] = relationship(back_populates="store")
+
+
+class SubscriptionPlan(Base):
+    __tablename__ = "subscription_plans"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    monthly_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    annual_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    ai_quota_monthly: Mapped[int] = mapped_column(Integer, default=100)
+    features: Mapped[str] = mapped_column(Text, default="")
+    is_recommended: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    subscriptions: Mapped[list["StoreSubscription"]] = relationship(back_populates="plan")
+
+
+class StoreSubscription(Base):
+    __tablename__ = "store_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"), nullable=False)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="trial")
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime)
+    current_period_ends_at: Mapped[datetime | None] = mapped_column(DateTime)
+    ai_quota_used: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    store: Mapped[Store] = relationship(back_populates="subscriptions")
+    plan: Mapped[SubscriptionPlan] = relationship(back_populates="subscriptions")
+
+    @property
+    def remaining_ai_quota(self) -> int:
+        return max((self.plan.ai_quota_monthly if self.plan else 0) - self.ai_quota_used, 0)
+
+
+class ContentItem(Base):
+    __tablename__ = "content_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"), nullable=False)
+    channel: Mapped[str] = mapped_column(String(40), nullable=False)
+    topic: Mapped[str] = mapped_column(String(120), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(40), default="draft")
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    store: Mapped[Store] = relationship(back_populates="content_items")
 
 
 class Staff(Base):

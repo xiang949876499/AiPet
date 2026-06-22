@@ -93,3 +93,27 @@ def test_cli_creates_internal_push_task_from_seeded_demo_data(tmp_path, monkeypa
 
     assert create_result.exit_code == 0
     assert "已创建内部推送任务" in create_result.output
+
+
+def test_cli_lists_subscription_plans_and_generates_content(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'ops.db'}")
+
+    from main import cli
+
+    runner = CliRunner()
+    assert runner.invoke(cli, ["init-db"]).exit_code == 0
+    assert runner.invoke(cli, ["seed"]).exit_code == 0
+
+    plans_result = runner.invoke(cli, ["subscription", "plans"])
+    assert plans_result.exit_code == 0
+    assert "专业版" in plans_result.output
+    assert "499" in plans_result.output
+
+    content_result = runner.invoke(cli, ["content", "generate"])
+    assert content_result.exit_code == 0
+    assert "今日内容已生成" in content_result.output
+
+    list_result = runner.invoke(cli, ["content", "list"])
+    assert list_result.exit_code == 0
+    assert "今日内容日历" in list_result.output
+    assert "朋友圈" in list_result.output
