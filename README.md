@@ -53,6 +53,10 @@ uv run uvicorn web.app:app --reload
 
 ```text
 http://localhost:8000
+http://localhost:8000/customers
+http://localhost:8000/appointments
+http://localhost:8000/reminders
+http://localhost:8000/samples
 http://localhost:8000/push-tasks
 ```
 
@@ -65,6 +69,16 @@ http://localhost:8000/push-tasks
 - 今日内容日历
 - 7 天运营计划
 - 本周触达任务、本周内容产出、预计挽回营业额
+
+Web API：
+
+```text
+GET  /api/customers
+GET  /api/appointments
+GET  /api/reminders?status=pending
+POST /api/reminders/{task_id}/send
+GET  /api/samples
+```
 
 CSV 导入支持以下常用表头：
 
@@ -137,7 +151,7 @@ uv run pytest tests -q
 app/        配置、数据库、SQLAlchemy 模型、Pydantic schema
 agents/     ReminderAgent、SchedulerAgent、SampleAgent
 core/       Prompt 模板与 AgentOrchestrator
-web/        FastAPI + Jinja2 工作台
+web/        FastAPI + Jinja2 工作台、管理页面、API routes
 tests/      单元测试和集成测试
 main.py     Click + Rich CLI 入口
 seed_data.py 演示数据导入
