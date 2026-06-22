@@ -87,3 +87,30 @@ def test_seed_subscription_plans_creates_recommended_professional_tier(db_sessio
     assert set(plans) == {"starter", "professional", "growth", "managed"}
     assert plans["professional"].is_recommended is True
     assert plans["professional"].monthly_price == 499
+
+
+def test_subscription_snapshot_includes_trial_status(db_session, sample_records):
+    from services.ops_dashboard import build_subscription_snapshot
+    from services.subscriptions import ensure_store_subscription
+
+    ensure_store_subscription(db_session, sample_records["store"].id, "professional")
+
+    snapshot = build_subscription_snapshot(db_session, sample_records["store"].id)
+
+    assert snapshot["plan_name"] == "专业版"
+    assert snapshot["status_label"] == "试用中"
+    assert snapshot["trial_days_left"] == 7
+
+
+def test_subscription_snapshot_marks_expired_trial(db_session, sample_records):
+    from services.ops_dashboard import build_subscription_snapshot
+    from services.subscriptions import ensure_store_subscription
+
+    subscription = ensure_store_subscription(db_session, sample_records["store"].id, "professional")
+    subscription.trial_ends_at = datetime.utcnow() - timedelta(days=1)
+    db_session.commit()
+
+    snapshot = build_subscription_snapshot(db_session, sample_records["store"].id)
+
+    assert snapshot["trial_days_left"] == 0
+    assert snapshot["status_label"] == "试用已到期"

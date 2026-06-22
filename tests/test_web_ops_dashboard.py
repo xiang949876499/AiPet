@@ -21,4 +21,6 @@ def test_ops_dashboard_renders_subscription_content_and_metrics(tmp_path, monkey
     assert "专业版" in response.text
     assert "今日客户机会" in response.text
     assert "今日内容日历" in response.text
+    assert "7 天运营计划" in response.text
+    assert "试用剩余" in response.text
     assert "预计挽回营业额" in response.text

@@ -21,3 +21,32 @@ def test_content_agent_uses_fallback_without_llm(db_session, sample_records):
 
     assert result["created"] == 3
     assert db_session.query(ContentItem).filter_by(channel="朋友圈").one().title == "今日客户维系提醒"
+
+
+def test_content_agent_consumes_ai_quota(db_session, sample_records):
+    from agents.content import ContentAgent
+    from services.subscriptions import ensure_store_subscription
+
+    subscription = ensure_store_subscription(db_session, sample_records["store"].id, "professional")
+
+    result = ContentAgent(db_session).execute({"store_id": sample_records["store"].id})
+
+    assert result["created"] == 3
+    assert subscription.ai_quota_used == 3
+    assert subscription.remaining_ai_quota == 297
+
+
+def test_content_agent_blocks_when_ai_quota_is_exhausted(db_session, sample_records):
+    from agents.content import ContentAgent
+    from app.models import ContentItem
+    from services.subscriptions import ensure_store_subscription
+
+    subscription = ensure_store_subscription(db_session, sample_records["store"].id, "professional")
+    subscription.ai_quota_used = subscription.plan.ai_quota_monthly
+    db_session.commit()
+
+    result = ContentAgent(db_session).execute({"store_id": sample_records["store"].id})
+
+    assert result["created"] == 0
+    assert result["quota_blocked"] is True
+    assert db_session.query(ContentItem).count() == 0
