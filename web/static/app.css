@@ -1039,30 +1039,27 @@ body {
   .app-shell,
   .app-body {
     display: block;
-    padding-bottom: 64px;
   }
 
   .app-sidebar {
-    position: fixed;
-    top: auto;
-    right: 0;
-    bottom: 0;
-    left: 0;
+    position: sticky;
+    top: 0;
     z-index: 30;
     display: block;
     min-height: 0;
-    max-height: 78vh;
-    overflow-y: auto;
+    height: auto;
+    max-height: none;
+    overflow: hidden;
     background: #fffefa;
-    border-top: 1px solid var(--color-border);
+    border-top: 0;
+    border-bottom: 1px solid var(--color-border);
     border-right: 0;
     padding: 6px;
-    transform: translateY(calc(100% - 60px));
     transition: transform 0.18s ease;
   }
 
   body.shell-nav-open .app-sidebar {
-    transform: translateY(0);
+    overflow: visible;
   }
 
   .app-brand {
@@ -1092,8 +1089,13 @@ body {
   }
 
   .sidebar-quick-links {
+    display: none;
     margin: 10px 4px 4px;
     padding-top: 10px;
+  }
+
+  body.shell-nav-open .sidebar-quick-links {
+    display: block;
   }
 
   .sidebar-quick-links h2 {
@@ -1112,7 +1114,7 @@ body {
   }
 
   .app-content {
-    padding: 18px 14px 82px;
+    padding: 12px 14px 28px;
   }
 
   .app-topbar {
