@@ -1,8 +1,18 @@
 # 宠店 AI 管家 — 统一工作台 UX 重构设计
 
 > 将碎片化的十几个独立页面重构为一个有统一设计语言、角色感知、可操作的运营工作台
-> 日期：2026-06-23 | 状态：待实施
+> 日期：2026-06-23 | 状态：已收口（V1.1 基础工作台已实现）
 > 依赖：无（纯 Web 层改造，后端 API 不变）
+
+---
+
+## 实施状态（2026-06-23）
+
+- 已落地统一 Shell：`web/templates/_layout.html`、`web/static/app.css`、`web/static/app.js` 覆盖全局导航、顶部搜索、待处理提醒、当前角色展示、移动端菜单和侧栏快捷入口。
+- 已落地核心页面：数据首页、客户触达、客户导入/详情、内容日历、授权额度、设置/规则、监控、入门引导、点评助手、活动方案、门店体检、周报复盘、AI 顾问。
+- 已落地全局搜索：顶部搜索进入 `/customers`，支持客户名、手机号、微信名和宠物名匹配，并在客户页保留搜索状态。
+- 已验证：`uv run pytest tests/ -q` 在 `D:\zx\AIPet` 通过（128 passed）；`uv run pytest tests -q` 在 `D:\zx\AIPet\aipet-license` 通过（6 passed）。
+- 实现适配：模板文件名采用当前路由命名（如 `audit.html`、`advisor.html`、`review_assist.html`），未新增 `store_audit.html` / `ai_advisor.html` 等别名文件；角色权限裁剪目前以统一 Shell 中的当前角色展示为基础，完整老板/店员/管理员权限中间件可作为后续增强。
 
 ---
 

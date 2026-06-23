@@ -10,10 +10,14 @@
 
 ## Execution Status (2026-06-23)
 
-- App implementation is verified with `uv run pytest tests/ -q` from `D:\zx\AIPet`: 127 passed.
+- App implementation is verified with `uv run pytest tests/ -q` from `D:\zx\AIPet`: 128 passed.
 - License server implementation is verified with `uv run pytest tests -q` from `D:\zx\AIPet\aipet-license`: 6 passed.
 - `aipet-license` now covers `/api/activate`, `/api/verify`, `/api/heartbeat`, `/api/renew`, `/api/upgrade`, `GET /admin`, activation-code creation, and machine unbind.
-- The plan's commit steps have not been executed in this session because the branch already contains a broad dirty working tree. Review and commit the intended scope when ready.
+- Implementation has been committed and pushed on `codex/ops-agent-subscription`:
+  - `28e9ba5 feat: complete pet store operations workbench`
+  - `b9b00c6 feat: polish workbench shell navigation`
+  - `f1b47c1 fix: keep mobile shell navigation collapsed`
+  - `fd36b4f test: cover workbench shell quick links`
 
 ## 2026-06-23 桌面材料功能提取增量
 
