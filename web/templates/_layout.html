@@ -26,15 +26,23 @@
         <a class="{% if active_nav == 'weekly' or active_nav == 'audit' or active_nav == 'advisor' %}is-active{% endif %}" href="/weekly-report"><span></span>报告复盘</a>
         <a class="{% if active_nav == 'settings' %}is-active{% endif %}" href="/settings"><span></span>店铺设置</a>
       </nav>
+      <section class="sidebar-quick-links" aria-label="快捷入口">
+        <h2>快捷入口</h2>
+        <a href="/customers/import">导入客户</a>
+        <a href="/activity">活动方案</a>
+        <a href="/audit">门店体检</a>
+        <a href="/advisor">AI 顾问</a>
+        <a href="/license">授权额度</a>
+      </section>
     </aside>
     <main class="app-content" id="main-content">
       <header class="app-topbar" aria-label="全局工具栏">
-        <button class="shell-menu-button" type="button" data-shell-menu aria-label="切换导航">
+        <button class="shell-menu-button" type="button" data-shell-menu aria-label="切换导航" aria-expanded="false">
           <span></span><span></span><span></span>
         </button>
         <form class="shell-search" action="/customers" method="get" role="search">
           <label class="sr-only" for="global_search">搜索客户名、手机号或宠物名</label>
-          <input id="global_search" class="app-search" name="global_search" type="search" placeholder="搜索客户名 / 手机号 / 宠物名">
+          <input id="global_search" class="app-search" name="global_search" type="search" placeholder="搜索客户名 / 手机号 / 宠物名" value="{{ global_search if global_search is defined else '' }}">
         </form>
         <div class="shell-actions">
           <button class="notification-button" type="button" data-notification-toggle aria-expanded="false">

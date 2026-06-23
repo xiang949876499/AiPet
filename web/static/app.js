@@ -1,8 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
   const menuButton = document.querySelector("[data-shell-menu]");
   if (menuButton) {
+    const closeShellNav = () => {
+      document.body.classList.remove("shell-nav-open");
+      menuButton.setAttribute("aria-expanded", "false");
+    };
+
     menuButton.addEventListener("click", () => {
-      document.body.classList.toggle("shell-nav-open");
+      const isOpen = document.body.classList.toggle("shell-nav-open");
+      menuButton.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    document.querySelectorAll(".app-sidebar a").forEach((link) => {
+      link.addEventListener("click", closeShellNav);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeShellNav();
+      }
     });
   }
 

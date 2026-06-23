@@ -18,7 +18,11 @@
   {% endfor %}
 </nav>
 
-<p class="muted-line">筛选：{{ filter_label }} · {{ customers | length }} 位客户</p>
+<p class="muted-line">
+  筛选：{{ filter_label }}
+  {% if global_search %} · 搜索：{{ global_search }}{% endif %}
+  · {{ customers | length }} 位客户
+</p>
 
 {% if batch_error == "no_selection" %}
 <div class="empty-state">请选择至少一位客户后再批量处理。</div>

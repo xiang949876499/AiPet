@@ -98,6 +98,25 @@ def test_customer_list_filters_by_pending_dnd_and_due(tmp_path, monkeypatch):
     assert "已超期" in due.text
 
 
+def test_customer_list_global_search_matches_customer_pet_and_phone(tmp_path, monkeypatch):
+    _seed_customer_detail(tmp_path, monkeypatch)
+
+    from fastapi.testclient import TestClient
+    from web.app import create_app
+
+    client = TestClient(create_app())
+
+    by_pet = client.get("/customers?global_search=奶茶")
+    assert by_pet.status_code == 200
+    assert "搜索：奶茶" in by_pet.text
+    assert "奶茶" in by_pet.text
+    assert "张姐" not in by_pet.text
+
+    by_phone = client.get("/customers?global_search=13900000000")
+    assert by_phone.status_code == 200
+    assert "13900000000" in by_phone.text
+
+
 def test_customer_list_batch_marks_pending_tasks_sent(tmp_path, monkeypatch):
     customer_id = _seed_customer_detail(tmp_path, monkeypatch)
 

@@ -429,6 +429,7 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
             active_filter = request.query_params.get("filter", "all")
             if active_filter not in CUSTOMER_FILTER_LABELS:
                 active_filter = "all"
+            global_search = request.query_params.get("global_search", "").strip()
 
             records = session.query(Customer).order_by(Customer.id.asc()).all()
             pending_customer_ids = {
@@ -467,6 +468,22 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
             elif active_filter == "due":
                 records = [customer for customer in records if customer.id in due_customer_ids]
 
+            if global_search:
+                needle = global_search.lower()
+                records = [
+                    customer
+                    for customer in records
+                    if needle
+                    in " ".join(
+                        [
+                            customer.name or "",
+                            customer.phone or "",
+                            customer.wechat_name or "",
+                            *[pet.name or "" for pet in customer.pets],
+                        ]
+                    ).lower()
+                ]
+
             customers_data = [
                 {
                     "id": customer.id,
@@ -489,6 +506,7 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
                     "customers": customers_data,
                     "active_filter": active_filter,
                     "filter_label": CUSTOMER_FILTER_LABELS[active_filter],
+                    "global_search": global_search,
                     "filters": CUSTOMER_FILTER_LABELS,
                     "batch_action": request.query_params.get("batch_action", ""),
                     "batch_count": _form_int(request.query_params.get("batch_count")),

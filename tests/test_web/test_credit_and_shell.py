@@ -100,7 +100,9 @@ def test_legacy_pages_use_unified_shell_and_static_css(tmp_path, monkeypatch):
         assert '<link rel="stylesheet" href="/static/app.css">' in response.text
         assert '<script src="/static/app.js" defer></script>' in response.text
         assert '<div class="app-shell">' in response.text
+        assert 'aria-expanded="false"' in response.text
         assert 'name="global_search"' in response.text
         assert "待处理" in response.text
         assert "当前角色" in response.text
+        assert "快捷入口" in response.text
         assert "<!doctype html>" in response.text
