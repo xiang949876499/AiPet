@@ -1,0 +1,136 @@
+{% extends "_layout.html" %}
+{% set active_nav = "customers" %}
+
+{% block title %}客户档案 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a class="btn-secondary" href="/customers">返回客户管理</a>
+    <h1>客户档案</h1>
+    <p>{{ customer.name }} 的客户资料、宠物档案、服务记录和待跟进任务。</p>
+  </div>
+</div>
+
+{% if saved == "profile" %}
+<div class="script-box">客户偏好已保存，后续跟进前可以先查看备注、标签和免打扰状态。</div>
+{% endif %}
+
+<div class="two-column">
+  <div class="stack">
+    <section class="card">
+      <div class="card-header"><h2>客户概览</h2></div>
+      <div class="card-body">
+        <div class="metric-grid">
+          <div class="metric-card"><span>客户姓名</span><strong>{{ customer.name }}</strong></div>
+          <div class="metric-card"><span>手机号</span><strong>{{ customer.phone or "未填写" }}</strong></div>
+          <div class="metric-card"><span>微信名</span><strong>{{ customer.wechat_name or "未填写" }}</strong></div>
+          <div class="metric-card"><span>最近到店</span><strong>{{ customer.last_visit_time.strftime("%Y-%m-%d") if customer.last_visit_time else "暂无" }}</strong></div>
+          <div class="metric-card"><span>到店次数</span><strong>{{ customer.visit_count }}</strong></div>
+          <div class="metric-card"><span>累计消费</span><strong>¥{{ "%.2f"|format(customer.total_amount or 0) }}</strong></div>
+        </div>
+        <div style="margin-top:12px;">
+          <span class="muted-line">当前状态：</span>
+          {% if customer.do_not_disturb %}
+          <span class="tag tag-warning">免打扰</span>
+          {% else %}
+          <span class="tag">可主动跟进</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>客户偏好</h2></div>
+      <div class="card-body">
+        <form method="post" action="/customers/{{ customer.id }}/profile" class="stack">
+          <label>客户标签
+            <input class="app-search" name="tags" type="text" value="{{ customer.tags or '' }}" placeholder="例如：高客单, 怕吵, 只约上午">
+          </label>
+          <label>跟进备注
+            <textarea class="app-search" name="note" rows="4" placeholder="记录香波偏好、沟通注意事项、常约时间等">{{ customer.note or "" }}</textarea>
+          </label>
+          <label class="check-label">
+            <input name="do_not_disturb" type="checkbox" {% if customer.do_not_disturb %}checked{% endif %}>
+            暂停主动触达
+          </label>
+          <button class="btn-primary" type="submit">保存偏好</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>宠物档案</h2></div>
+      <div class="card-body stack">
+        {% for pet in pets %}
+        <article class="decision-card">
+          <h3>{{ pet.name }}</h3>
+          <p>{{ pet.pet_type }}{% if pet.breed %} · {{ pet.breed }}{% endif %} · 洗护周期 {{ pet.care_cycle_days }} 天</p>
+        </article>
+        {% else %}
+        <p class="empty-state">还没有宠物资料。</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header"><h2>服务记录</h2></div>
+      <div class="card-body table-wrap">
+        <table class="app-table">
+          <thead><tr><th>日期</th><th>项目</th><th>宠物</th><th>金额</th><th>备注</th></tr></thead>
+          <tbody>
+            {% for record in service_records %}
+            <tr>
+              <td>{{ record.service_time.strftime("%Y-%m-%d") }}</td>
+              <td>{{ record.service_type }}</td>
+              <td>{{ pet_names.get(record.pet_id, "") }}</td>
+              <td>¥{{ "%.2f"|format(record.amount or 0) }}</td>
+              <td>{{ record.note or "" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty-state">还没有服务记录。</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-header"><h2>待跟进任务</h2></div>
+    <div class="card-body stack">
+      {% for task in follow_tasks %}
+      <article class="decision-card">
+        <h3>{{ task.task_type }} · {{ pet_names.get(task.pet_id, "") }}</h3>
+        <div class="decision-meta">优先级：{{ task.priority }}</div>
+        <p>{{ task.reason }}</p>
+        <p>{{ task.suggested_action }}</p>
+        <div class="script-box" id="message-{{ task.id }}">{{ task.ai_message or "" }}</div>
+        <div class="button-row">
+          <button class="btn-secondary" type="button" onclick="copyMessage('message-{{ task.id }}')">复制话术</button>
+          <form method="post" action="/reminders/{{ task.id }}/mark-sent">
+            <button class="btn-primary" type="submit">标记已发送</button>
+          </form>
+          <form method="post" action="/reminders/{{ task.id }}/push-internal">
+            <button class="btn-secondary" type="submit">生成内部提醒</button>
+          </form>
+        </div>
+      </article>
+      {% else %}
+      <p class="empty-state">当前没有待跟进任务。</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function copyMessage(id) {
+    const text = document.getElementById(id).innerText;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+  }
+</script>
+{% endblock %}

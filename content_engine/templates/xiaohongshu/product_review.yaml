@@ -1,0 +1,9 @@
+code: xhs_product_review
+channel: xiaohongshu
+topic: product_review
+title: "Product notes from the store"
+body: "How to choose daily products for {pet_name}'s routine."
+hashtags:
+  - product-review
+  - pet-products
+image_prompt: "Clean product review layout."

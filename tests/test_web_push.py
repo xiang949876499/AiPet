@@ -1,4 +1,4 @@
-def test_push_tasks_page_renders_pending_tasks(tmp_path, monkeypatch):
+def test_push_tasks_legacy_route_redirects_to_unified_outreach(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'web_push.db'}")
 
     from app.database import SessionLocal, init_db
@@ -26,9 +26,13 @@ def test_push_tasks_page_renders_pending_tasks(tmp_path, monkeypatch):
         session.close()
 
     client = TestClient(create_app())
-    response = client.get("/push-tasks")
+    response = client.get("/push-tasks", follow_redirects=False)
 
-    assert response.status_code == 200
-    assert "推送任务" in response.text
-    assert "待确认" in response.text
-    assert "请跟进豆豆的洗护提醒" in response.text
+    assert response.status_code == 302
+    assert response.headers["location"] == "/outreach#send"
+
+    outreach = client.get("/outreach")
+    assert outreach.status_code == 200
+    assert "内部推送队列" in outreach.text
+    assert "待确认" in outreach.text
+    assert "请跟进豆豆的洗护提醒" in outreach.text

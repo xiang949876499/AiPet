@@ -1,0 +1,9 @@
+code: douyin_pet_daily
+channel: douyin
+topic: pet_daily
+title: "Store daily with {pet_name}"
+body: "A quick, warm daily clip from {store_name}."
+hashtags:
+  - pet-daily
+  - store-life
+image_prompt: "Vertical pet daily short video cover."

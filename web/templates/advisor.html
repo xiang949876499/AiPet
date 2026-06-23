@@ -1,0 +1,39 @@
+{% extends "_layout.html" %}
+{% set active_nav = "advisor" %}
+
+{% block title %}AI 经营顾问 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>AI 经营顾问</h1>
+    <p>回答经营、营销、客户沟通和日常护理边界内的问题；健康问题会引导咨询专业兽医。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>提问</h2>
+  </div>
+  <div class="card-body">
+    <form method="post" class="stack">
+      <label>
+        你的问题
+        <textarea class="app-search" name="question" rows="4" placeholder="客户说洗护比隔壁贵 20 块，怎么回？">{{ question }}</textarea>
+      </label>
+      <button class="btn-primary" type="submit">发送</button>
+    </form>
+  </div>
+</section>
+
+{% if answer %}
+<section class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>建议回复</h2>
+  </div>
+  <div class="card-body">
+    <div class="script-box">{{ answer }}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

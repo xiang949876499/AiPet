@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -24,6 +24,7 @@ class Store(Base):
     pets: Mapped[list["Pet"]] = relationship(back_populates="store")
     subscriptions: Mapped[list["StoreSubscription"]] = relationship(back_populates="store")
     content_items: Mapped[list["ContentItem"]] = relationship(back_populates="store")
+    outreach_rules: Mapped[list["OutreachRule"]] = relationship(back_populates="store")
 
 
 class SubscriptionPlan(Base):
@@ -72,6 +73,10 @@ class ContentItem(Base):
     topic: Mapped[str] = mapped_column(String(120), nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    hashtags: Mapped[str | None] = mapped_column(Text)
+    image_prompt: Mapped[str | None] = mapped_column(Text)
+    scheduled_date: Mapped[date | None] = mapped_column(Date)
+    interaction_data: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(40), default="draft")
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime)
     published_at: Mapped[datetime | None] = mapped_column(DateTime)
@@ -110,6 +115,9 @@ class Customer(Base):
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     visit_count: Mapped[int] = mapped_column(Integer, default=0)
     do_not_disturb: Mapped[bool] = mapped_column(Boolean, default=False)
+    dnd_until: Mapped[datetime | None] = mapped_column(DateTime)
+    dnd_channels: Mapped[str | None] = mapped_column(Text)
+    dnd_message_types: Mapped[str | None] = mapped_column(Text)
     external_userid: Mapped[str | None] = mapped_column(String(120))
     push_consent_status: Mapped[str] = mapped_column(String(40), default="unknown")
     note: Mapped[str | None] = mapped_column(Text)
@@ -131,6 +139,8 @@ class Pet(Base):
     breed: Mapped[str | None] = mapped_column(String(80))
     gender: Mapped[str | None] = mapped_column(String(20))
     birthday: Mapped[datetime | None] = mapped_column(Date)
+    vaccine_next_date: Mapped[date | None] = mapped_column(Date)
+    deworming_last_date: Mapped[date | None] = mapped_column(Date)
     weight: Mapped[float | None] = mapped_column(Numeric(6, 2))
     hair_type: Mapped[str | None] = mapped_column(String(40))
     character_tags: Mapped[str | None] = mapped_column(Text)
@@ -191,12 +201,72 @@ class FollowTask(Base):
     status: Mapped[str] = mapped_column(String(40), default="待处理")
     staff_id: Mapped[int | None] = mapped_column(ForeignKey("staff.id"))
     ai_message: Mapped[str | None] = mapped_column(Text)
+    decision_card: Mapped[str | None] = mapped_column(Text)
+    send_mode: Mapped[str] = mapped_column(String(40), default="manual_confirm")
     result: Mapped[str | None] = mapped_column(String(80))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     customer: Mapped[Customer] = relationship(back_populates="follow_tasks")
     pet: Mapped[Pet] = relationship(back_populates="follow_tasks")
     push_tasks: Mapped[list["PushTask"]] = relationship(back_populates="follow_task")
+
+
+class OutreachRule(Base):
+    __tablename__ = "outreach_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"), nullable=False)
+    code: Mapped[str] = mapped_column(String(80), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    message_type: Mapped[str] = mapped_column(String(80), default="service")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    send_mode: Mapped[str] = mapped_column(String(40), default="manual_confirm")
+    priority: Mapped[str] = mapped_column(String(20), default="medium")
+    config_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    store: Mapped[Store] = relationship(back_populates="outreach_rules")
+
+
+class OutreachLog(Base):
+    __tablename__ = "outreach_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int] = mapped_column(ForeignKey("stores.id"), nullable=False)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"), nullable=False)
+    pet_id: Mapped[int | None] = mapped_column(ForeignKey("pets.id"))
+    follow_task_id: Mapped[int | None] = mapped_column(ForeignKey("follow_tasks.id"))
+    rule_code: Mapped[str] = mapped_column(String(80), default="")
+    channel: Mapped[str] = mapped_column(String(40), default="wecom_external")
+    message_type: Mapped[str] = mapped_column(String(80), default="service")
+    send_mode: Mapped[str] = mapped_column(String(40), default="manual_confirm")
+    content: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(40), default="pending_confirm")
+    decision_card: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime)
+    error_message: Mapped[str | None] = mapped_column(Text)
+    response_time: Mapped[datetime | None] = mapped_column(DateTime)
+    response_content: Mapped[str | None] = mapped_column(Text)
+    appointment_created: Mapped[bool] = mapped_column(Boolean, default=False)
+    appointment_time: Mapped[datetime | None] = mapped_column(DateTime)
+    service_within_7d: Mapped[bool] = mapped_column(Boolean, default=False)
+    linked_service_record_id: Mapped[int | None] = mapped_column(ForeignKey("service_records.id"))
+    attributed_revenue: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ContentTemplate(Base):
+    __tablename__ = "content_templates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    store_id: Mapped[int | None] = mapped_column(ForeignKey("stores.id"))
+    code: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    channel: Mapped[str] = mapped_column(String(40), nullable=False)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    body_template: Mapped[str] = mapped_column(Text, nullable=False)
+    variables: Mapped[str] = mapped_column(Text, default="")
+    tags: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class PushTask(Base):

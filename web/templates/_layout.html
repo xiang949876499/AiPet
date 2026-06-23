@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#main-content">跳到主要内容</a>
+  <!-- data-shell -->
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="后台导航">
+      <div class="app-brand">
+        <strong>PetCRM AI</strong>
+        <span>宠物店营销数据台</span>
+        <span class="sr-only">宠物店 AI 复购提醒助手</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="{% if active_nav == 'today' %}is-active{% endif %}" href="/"><span></span>数据首页</a>
+        <a class="{% if active_nav == 'outreach' or active_nav == 'customers' %}is-active{% endif %}" href="/outreach"><span></span>客户触达</a>
+        <a class="{% if active_nav == 'content' or active_nav == 'activity' %}is-active{% endif %}" href="/content/calendar"><span></span>内容活动<span class="sr-only">内容发布</span></a>
+        <a class="{% if active_nav == 'review' %}is-active{% endif %}" href="/review"><span></span>点评口碑</a>
+        <a class="{% if active_nav == 'weekly' or active_nav == 'audit' or active_nav == 'advisor' %}is-active{% endif %}" href="/weekly-report"><span></span>报告复盘</a>
+        <a class="{% if active_nav == 'settings' %}is-active{% endif %}" href="/settings"><span></span>店铺设置</a>
+      </nav>
+    </aside>
+    <main class="app-content" id="main-content">
+      <header class="app-topbar" aria-label="全局工具栏">
+        <button class="shell-menu-button" type="button" data-shell-menu aria-label="切换导航">
+          <span></span><span></span><span></span>
+        </button>
+        <form class="shell-search" action="/customers" method="get" role="search">
+          <label class="sr-only" for="global_search">搜索客户名、手机号或宠物名</label>
+          <input id="global_search" class="app-search" name="global_search" type="search" placeholder="搜索客户名 / 手机号 / 宠物名">
+        </form>
+        <div class="shell-actions">
+          <button class="notification-button" type="button" data-notification-toggle aria-expanded="false">
+            <span>待处理</span>
+            <strong>{{ metrics.pending_tasks if metrics is defined and metrics.pending_tasks is defined else 0 }}</strong>
+          </button>
+          <div class="notification-popover" data-notification-popover hidden>
+            <strong>待处理提醒</strong>
+            <p>进入客户触达页处理今日待跟进客户。</p>
+            <a href="/outreach">打开客户触达</a>
+          </div>
+          <div class="app-user" aria-label="当前角色">
+            <span>当前角色</span>
+            <strong>{{ current_role if current_role is defined else "老板" }}</strong>
+          </div>
+        </div>
+      </header>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

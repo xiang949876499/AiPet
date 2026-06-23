@@ -22,3 +22,16 @@ def test_reminder_agent_does_not_duplicate_open_task(db_session, sample_records)
 
     assert first["created"] == 1
     assert second["created"] == 0
+
+
+def test_reminder_agent_skips_do_not_disturb_customer(db_session, sample_records):
+    from agents.reminder import ReminderAgent
+    from app.models import FollowTask
+
+    sample_records["customer"].do_not_disturb = True
+    db_session.commit()
+
+    result = ReminderAgent(db_session=db_session).execute({"store_id": sample_records["store"].id})
+
+    assert result["created"] == 0
+    assert db_session.query(FollowTask).count() == 0

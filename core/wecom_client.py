@@ -15,6 +15,7 @@ JsonGetter = Callable[[str, dict[str, Any]], dict[str, Any]]
 class WeComClient:
     token_url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken"
     message_send_url = "https://qyapi.weixin.qq.com/cgi-bin/message/send"
+    external_message_send_url = "https://qyapi.weixin.qq.com/cgi-bin/externalcontact/message/send"
     oauth_userinfo_url = "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo"
     user_detail_url = "https://qyapi.weixin.qq.com/cgi-bin/user/get"
 
@@ -77,6 +78,19 @@ class WeComClient:
             "safe": 0,
         }
         return self.post_json(f"{self.message_send_url}?access_token={token}", payload)
+
+    def send_external_text(self, external_userid: str, content: str) -> dict[str, Any]:
+        token = self.get_access_token()
+        if not token:
+            return {"errcode": -1, "errmsg": self.last_error or "missing access_token"}
+
+        payload = {
+            "sender": self.agent_id,
+            "external_userid": [external_userid],
+            "msgtype": "text",
+            "text": {"content": content},
+        }
+        return self.post_json(f"{self.external_message_send_url}?access_token={token}", payload)
 
     def get_oauth_userid(self, code: str) -> str | None:
         token = self.get_access_token()

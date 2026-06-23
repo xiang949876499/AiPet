@@ -1,0 +1,36 @@
+{% extends "_layout.html" %}
+{% set active_nav = "today" %}
+
+{% block title %}首次设置 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>3 分钟完成首次设置</h1>
+    <p>按顺序完成四步，让系统第一次生成可用的客户触达和内容任务。</p>
+  </div>
+</div>
+
+<div class="stack">
+  <section class="decision-card">
+    <h3>1. 导入客户数据</h3>
+    <p>上传客户、宠物、最近到店和洗护周期，系统才能判断今天该联系谁。</p>
+    <a class="btn-primary" href="/customers/import">导入客户数据</a>
+  </section>
+  <section class="decision-card">
+    <h3>2. 检查客户触达</h3>
+    <p>查看待跟进客户、生成话术，并确认是否需要内部推送给店员。</p>
+    <a class="btn-secondary" href="/outreach">打开客户触达</a>
+  </section>
+  <section class="decision-card">
+    <h3>3. 生成今日内容</h3>
+    <p>生成朋友圈、小红书、抖音脚本草稿，老板确认后再发布。</p>
+    <a class="btn-secondary" href="/content/calendar">查看内容日历</a>
+  </section>
+  <section class="decision-card">
+    <h3>4. 回填效果</h3>
+    <p>记录回复、到店、消费和内容互动，后续周报和看板会更准确。</p>
+    <a class="btn-secondary" href="/">回到工作台</a>
+  </section>
+</div>
+{% endblock %}

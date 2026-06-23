@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from app.models import ContentItem, Store
 from core.llm import LLMClient
+from services.credits import content_credit_cost
 from services.subscriptions import consume_ai_quota
 
 
@@ -21,7 +22,9 @@ class ContentAgent:
             return {"created": 0}
 
         channels_to_create = [channel for channel in self.channels if not self._has_today_content(store.id, channel)]
-        if channels_to_create and not consume_ai_quota(self.db_session, store.id, len(channels_to_create)):
+        if channels_to_create and not consume_ai_quota(
+            self.db_session, store.id, content_credit_cost(channels_to_create)
+        ):
             return {"created": 0, "quota_blocked": True}
 
         created = 0
@@ -44,9 +47,19 @@ class ContentAgent:
         return {"created": created}
 
     def _has_today_content(self, store_id: int, channel: str) -> bool:
-        today = datetime.utcnow().date()
-        items = self.db_session.query(ContentItem).filter_by(store_id=store_id, channel=channel).all()
-        return any(item.created_at.date() == today for item in items)
+        today = date.today()
+        tomorrow = today + timedelta(days=1)
+        return (
+            self.db_session.query(ContentItem)
+            .filter(
+                ContentItem.store_id == store_id,
+                ContentItem.channel == channel,
+                ContentItem.created_at >= today,
+                ContentItem.created_at < tomorrow,
+            )
+            .count()
+            > 0
+        )
 
     def _generate(self, channel: str, store_name: str) -> tuple[str, str]:
         prompt = f"为{store_name}生成一条{channel}内容，主题是宠物洗护复购和客户维系，输出标题和正文。"

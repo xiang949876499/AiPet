@@ -1,0 +1,41 @@
+{% extends "_layout.html" %}
+{% set active_nav = "outreach" %}
+
+{% block title %}触达确认 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>触达确认</h1>
+    <p>人工确认自动触达内容，确认后再发送，避免误触达客户。</p>
+  </div>
+  <a class="btn-secondary" href="/outreach">返回客户触达</a>
+</div>
+
+<section class="card">
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead><tr><th>客户</th><th>宠物</th><th>规则</th><th>话术</th><th>决策依据</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for item in messages %}
+        <tr>
+          <td>{{ item.customer_name }}</td>
+          <td>{{ item.pet_name }}</td>
+          <td>{{ item.rule_code }}</td>
+          <td class="wide-cell">{{ item.ai_message }}</td>
+          <td class="wide-cell"><pre class="pre-wrap">{{ item.decision_card }}</pre></td>
+          <td>
+            <div class="button-row">
+              <form method="post" action="/outreach/confirm/{{ item.log_id }}"><button class="btn-primary" type="submit">确认发送</button></form>
+              <form method="post" action="/outreach/reject/{{ item.log_id }}"><button class="btn-secondary" type="submit">驳回</button></form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="empty-state">当前没有待确认消息。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

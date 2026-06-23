@@ -32,8 +32,8 @@ def test_content_agent_consumes_ai_quota(db_session, sample_records):
     result = ContentAgent(db_session).execute({"store_id": sample_records["store"].id})
 
     assert result["created"] == 3
-    assert subscription.ai_quota_used == 3
-    assert subscription.remaining_ai_quota == 297
+    assert subscription.ai_quota_used == 7
+    assert subscription.remaining_ai_quota == 1493
 
 
 def test_content_agent_blocks_when_ai_quota_is_exhausted(db_session, sample_records):

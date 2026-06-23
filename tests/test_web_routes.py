@@ -96,7 +96,7 @@ def test_web_pages_render_core_sections(tmp_path, monkeypatch):
     pages = {
         "/customers": "客户管理",
         "/appointments": "预约管理",
-        "/reminders": "复购运营",
+        "/reminders": "客户触达",
         "/samples": "试用装管理",
     }
     for path, title in pages.items():

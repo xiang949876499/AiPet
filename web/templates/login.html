@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }} - 登录</title>
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #637068;
+      --line: #dce5df;
+      --paper: #f7faf5;
+      --surface: #ffffff;
+      --leaf: #1f7a4d;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+      padding: 24px;
+    }
+    main.shell {
+      width: min(880px, 100%);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .intro, .login-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      box-shadow: 0 18px 48px rgba(23, 33, 29, 0.08);
+    }
+    .intro {
+      background: linear-gradient(140deg, #fffdf6, #eef7ef);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 320px;
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0; }
+    p { margin: 0 0 22px; color: var(--muted); }
+    .eyebrow { color: var(--leaf); font-weight: 700; font-size: 13px; margin-bottom: 10px; }
+    .steps { display: grid; gap: 10px; margin-top: 24px; }
+    .step { border-left: 3px solid var(--leaf); padding-left: 12px; color: var(--muted); }
+    .step strong { display: block; color: var(--ink); font-size: 15px; }
+    .hint {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcf8;
+      color: var(--muted);
+      padding: 12px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+    label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 12px;
+      font-size: 15px;
+    }
+    button {
+      width: 100%;
+      height: 42px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--leaf);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .error {
+      margin-bottom: 14px;
+      border: 1px solid #f2b8b5;
+      background: #fff5f3;
+      color: var(--danger);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    @media (max-width: 760px) {
+      main.shell { grid-template-columns: 1fr; }
+      .intro { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="intro">
+      <div>
+        <div class="eyebrow">安全进入工作台</div>
+        <h1>宠物店 AI 管家后台</h1>
+        <p>一键启动后，用管理员密码进入后台，继续处理客户提醒、内部推送和内容发布。</p>
+      </div>
+      <div class="steps">
+        <div class="step"><strong>先激活或试用</strong>没有授权时会先进入激活页，可开启本机试用。</div>
+        <div class="step"><strong>再进入工作台</strong>登录后会回到刚才要访问的页面。</div>
+        <div class="step"><strong>最后人工确认</strong>外部触达默认不自动发送，先确认再执行。</div>
+      </div>
+    </section>
+    <section class="login-card">
+      <h1>后台登录</h1>
+      <p>输入管理员密码，进入门店运营工作台。</p>
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+      <form method="post" action="/login">
+        <input type="hidden" name="next" value="{{ next_path }}">
+        <label for="password">管理员密码</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" autofocus required>
+        <button type="submit">登录</button>
+      </form>
+      <div class="hint">忘记密码时，请在服务器 `.env` 中更新 `AIPET_ADMIN_PASSWORD` 后重启。</div>
+    </section>
+  </main>
+</body>
+</html>

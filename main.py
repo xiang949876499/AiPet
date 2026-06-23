@@ -358,5 +358,150 @@ def push_send_internal_command(dry_run: bool):
         session.close()
 
 
+@cli.command("activate")
+@click.option("--code", prompt="Activation code")
+@click.option("--store-name", prompt="Store name")
+@click.option("--phone", default="")
+def activate_command(code: str, store_name: str, phone: str):
+    import hashlib
+    import platform
+    import uuid
+
+    from licensing.client import LicenseClient
+    from licensing.storage import LicenseStorage
+
+    machine_id = hashlib.sha256(f"{platform.node()}-{uuid.getnode()}".encode()).hexdigest()[:32]
+    client = LicenseClient()
+    result = client.activate(code, store_name, phone, machine_id)
+    if result:
+        LicenseStorage().save_token(result["token"], result["plan_code"], result["expires_at"])
+        console.print(f"Activated plan {result['plan_code']} until {result['expires_at']}")
+    else:
+        console.print(f"Activation failed: {client.last_error}")
+
+
+@cli.command("trial")
+def trial_command():
+    from licensing.storage import LicenseStorage
+
+    token = LicenseStorage().create_trial_token()
+    if token is None:
+        console.print("[red]已存在付费 license，无法覆盖为试用。[/red]")
+        return
+    console.print(f"Started 14-day growth trial: {token['expires_at']}")
+
+
+@cli.group("license")
+def license_group():
+    pass
+
+
+@license_group.command("status")
+def license_status_command():
+    from licensing.storage import LicenseStorage
+
+    status = LicenseStorage().get_status()
+    table = Table(title="License status")
+    table.add_column("Field")
+    table.add_column("Value")
+    for key in ["mode", "plan_code", "expires_at", "offline_remaining_days", "remaining_ai_calls"]:
+        table.add_row(key, str(status.get(key)))
+    console.print(table)
+
+
+@cli.group("outreach")
+def outreach_group():
+    pass
+
+
+@outreach_group.command("scan")
+def outreach_scan_command():
+    init_db()
+    session = SessionLocal()
+    try:
+        from outreach.engine import dispatch_outreach
+
+        store = session.query(Store).order_by(Store.id.asc()).first()
+        from licensing.storage import LicenseStorage
+        token_data = LicenseStorage().get_token()
+        plan_code = token_data.get("plan_code", "starter") if token_data else "starter"
+        result = dispatch_outreach(session, store.id, plan_code=plan_code) if store else {"created": 0, "skipped": 0}
+        console.print(f"Generated {result['created']} outreach tasks, skipped {result['skipped']}.")
+    finally:
+        session.close()
+
+
+@outreach_group.command("confirm-list")
+def outreach_confirm_list_command():
+    init_db()
+    session = SessionLocal()
+    try:
+        from outreach.confirm_flow import get_pending_confirmations
+
+        store = session.query(Store).order_by(Store.id.asc()).first()
+        messages = get_pending_confirmations(session, store.id) if store else []
+        table = Table(title="Pending outreach confirmations")
+        table.add_column("ID")
+        table.add_column("Customer")
+        table.add_column("Pet")
+        table.add_column("Message")
+        for item in messages:
+            table.add_row(str(item["log_id"]), item["customer_name"], item["pet_name"], item["ai_message"][:80])
+        console.print(table)
+    finally:
+        session.close()
+
+
+@content_group.command("calendar")
+@click.option("--store-id", type=int)
+def content_calendar_command(store_id: int | None):
+    init_db()
+    session = SessionLocal()
+    try:
+        from content_engine.calendar import build_content_calendar
+
+        if store_id is None:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            store_id = store.id if store else None
+        items = build_content_calendar(session, store_id) if store_id else []
+        table = Table(title="Content calendar")
+        table.add_column("Date")
+        table.add_column("Channel")
+        table.add_column("Template")
+        table.add_column("Status")
+        for item in items:
+            table.add_row(item["date"], item["channel"], item["template_code"], item["status"])
+        console.print(table)
+    finally:
+        session.close()
+
+
+@cli.group("analytics")
+def analytics_group():
+    pass
+
+
+@analytics_group.command("dashboard")
+def analytics_dashboard_command():
+    init_db()
+    session = SessionLocal()
+    try:
+        from analytics.dashboard import build_tiered_dashboard
+        from licensing.storage import LicenseStorage
+
+        store = session.query(Store).order_by(Store.id.asc()).first()
+        token_data = LicenseStorage().get_token()
+        plan_code = token_data.get("plan_code", "starter") if token_data else "starter"
+        data = build_tiered_dashboard(session, store.id, plan_code) if store else {"metrics": {}}
+        table = Table(title=f"Analytics dashboard ({plan_code})")
+        table.add_column("Metric")
+        table.add_column("Value")
+        for key, value in data.get("metrics", {}).items():
+            table.add_row(key, str(value))
+        console.print(table)
+    finally:
+        session.close()
+
+
 if __name__ == "__main__":
     cli()

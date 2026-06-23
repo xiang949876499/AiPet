@@ -96,16 +96,30 @@ def build_subscription_snapshot(db_session, store_id: int) -> dict:
             "status": "inactive",
             "status_label": "未配置",
             "remaining_ai_quota": 0,
+            "credit_used": 0,
+            "credit_total": 0,
+            "credit_remaining": 0,
+            "credit_usage_percent": 0,
+            "credit_usage_label": "本月已用 0 / 0 Credit",
             "trial_days_left": 0,
             "features": [],
         }
     status_label = subscription_status_label(subscription)
+    credit_total = subscription.plan.ai_quota_monthly if subscription.plan else 0
+    credit_used = subscription.ai_quota_used
+    credit_remaining = max(credit_total - credit_used, 0)
+    credit_usage_percent = int((credit_used / credit_total) * 100) if credit_total else 0
     return {
         "plan_name": subscription.plan.name,
         "status": subscription.status,
         "status_label": status_label,
         "monthly_price": subscription.plan.monthly_price,
         "remaining_ai_quota": subscription.remaining_ai_quota,
+        "credit_used": credit_used,
+        "credit_total": credit_total,
+        "credit_remaining": credit_remaining,
+        "credit_usage_percent": min(credit_usage_percent, 100),
+        "credit_usage_label": f"本月已用 {credit_used} / {credit_total} Credit",
         "trial_days_left": trial_days_left(subscription),
         "trial_ends_at": subscription.trial_ends_at,
         "features": subscription.plan.features.split(",") if subscription.plan.features else [],

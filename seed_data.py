@@ -16,6 +16,9 @@ def seed_demo_data(session):
     session.add(Staff(store_id=store.id, name="小王", role="店员", phone="13800000001", wecom_userid="wang"))
     seed_subscription_plans(session)
     ensure_store_subscription(session, store.id)
+    from outreach.rules import _ensure_default_rules
+
+    _ensure_default_rules(session, store.id)
 
     customers = [
         ("张姐", "豆豆", "狗", "柯基", 24, 21),

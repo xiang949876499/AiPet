@@ -2,11 +2,161 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Deliver the V1.1 release with License activation, automated customer outreach, content engine, and tiered analytics — the product can be sold.
+**Goal:** Deliver the V1.1 release as a sellable daily customer operations loop: import store data, generate explainable follow-up opportunities, let staff safely confirm/send scripts, record outcomes, and review the business impact.
 
-**Architecture:** Two repositories — `aipet-app` (local pet store deployment, enhanced with 4 new modules) and `aipet-license` (cloud license validation server). Core business logic runs fully locally with a 7-day offline grace period; only license activation/validation phones home.
+**Architecture:** Two repositories — `aipet-app` (local pet store deployment, enhanced with License, outreach, content, analytics, compliance, and UX modules) and `aipet-license` (cloud license validation server). Core business logic runs locally; License adds 14-day trial support, plan-based offline grace, and non-blocking downgrade behavior. Outreach defaults to controllable semi-automation, with WeCom authorization, frequency caps, sensitive-word audit, and complete logs before any external send.
 
 **Tech Stack:** Python 3.11+, FastAPI + Jinja2, SQLAlchemy + SQLite, Click + Rich, APScheduler, httpx, pytest
+
+## Execution Status (2026-06-23)
+
+- App implementation is verified with `uv run pytest tests/ -q` from `D:\zx\AIPet`: 127 passed.
+- License server implementation is verified with `uv run pytest tests -q` from `D:\zx\AIPet\aipet-license`: 6 passed.
+- `aipet-license` now covers `/api/activate`, `/api/verify`, `/api/heartbeat`, `/api/renew`, `/api/upgrade`, `GET /admin`, activation-code creation, and machine unbind.
+- The plan's commit steps have not been executed in this session because the branch already contains a broad dirty working tree. Review and commit the intended scope when ready.
+
+## 2026-06-23 桌面材料功能提取增量
+
+**Source materials:**
+- `C:/Users/zx/Desktop/新建 文本文档 (3).txt`
+- `C:/Users/zx/Desktop/《宠物店营销Agent：功能与成本分析报告》.docx`
+- `C:/Users/zx/Desktop/新建 文本文档.txt`
+- `C:/Users/zx/Desktop/新建 文本文档 (2).txt`
+
+**Product decision:** Keep the V1.1 product centered on the daily customer repurchase loop, while bringing content generation into the first-stage visible workflow. The first version should feel like a pet store owner's AI marketing operator: it tells the owner who to contact, why, what to offer, how to say it, when to send it, what content to publish, and whether yesterday's work created visits or repurchases.
+
+### Extracted MVP Scope
+
+| Priority | Feature | Plan treatment |
+|---|---|---|
+| P0 | Customer import, customer profile, and intelligent tags | Existing foundation; strengthen as the data entry point for the daily loop. |
+| P0 | Dormant customer warning, lifecycle repurchase reminder, and old-customer recall | Existing foundation; keep as the core money-facing value. |
+| P0 | Explainable AI script generation | Existing foundation; every script must include who to contact, why, what to recommend, how to say it, and when to send it. |
+| P0 | Today workbench + 7-day operating plan | Existing foundation; keep as the first-screen workflow for store owners. |
+| P0 | Moments, Xiaohongshu, and Douyin/short-video copy generation | Existing foundation; treat as first-stage visible value, but subordinate to the customer follow-up loop. |
+| P0 | Weekly operating recap | Strengthen plan coverage: report outreach count, reply count, visits within attribution window, and estimated recovered revenue. |
+| P1 | Store marketing diagnostic report | Add as later acquisition/reporting feature; not required for the current V1.1 loop. |
+| P1 | Activity plan generator | Add as later growth feature for washing cards, stored-value cards, weekday idle slots, holiday activities, and referral campaigns. |
+| P1 | Review reply and positive-review guidance | Add as later reputation feature for Meituan/Dianping/Douyin-style public review scenarios. |
+| P1 | WeCom AI reception assistant | Add as later customer-service feature; keep current V1.1 outreach guarded by authorization and manual confirmation where needed. |
+| P1 | Precise customer segmentation and targeted touch | Add after customer data import/tagging is stable. |
+| P1 | Activity profit estimation | Add after cost, labor, consumables, and average order value inputs are modeled. |
+| P1 | Public-platform comment/private-message reply assistant | Add only where platform APIs and compliance boundaries are clear. |
+| P2 / Do not include in MVP | Full cashier/POS, inventory, boarding room-status management, staff scheduling/commission, mini-program mall | Excluded from this plan; these move the product toward generic management SaaS or custom outsourcing. |
+| P2 / Do not include in MVP | Fully automatic posting/private messages, AI-generated finished videos, medical diagnosis, smart-camera/hardware ecosystem | Excluded from this plan due to platform risk, cost, review burden, or medical compliance risk. |
+
+### Required Input And Output Boundaries
+
+- **Customer data:** phone number, pet name, latest visit, service item, spend amount, customer/pet tags, do-not-disturb status, and optional WeCom/external contact identity.
+- **Outreach task:** trigger reason, evidence, suggested action, AI script, send/confirmation state, reply/result state, and attribution fields.
+- **Content task:** platform, topic, template, body copy, hashtags, scheduled publish time, publish state, and manual interaction backfill.
+
+### Planning Notes For Implementers
+
+- Do not duplicate already-created modules (`outreach/`, `content_engine/`, `analytics/`, `licensing/`) as net-new work. Treat this section as a feature-priority correction and gap list for the existing V1.1 plan.
+- The value hierarchy is: customer repurchase loop first, content generation second, reports/activities/reputation third, generic SaaS management never in MVP.
+- Any customer-facing external send remains subject to authorization, frequency limits, sensitive-word audit, and manual confirmation for risky scenarios.
+- Medical or health-related user inputs may produce conservative care reminders or vet-referral language only; they must not produce diagnosis, treatment, medication, or medical image interpretation.
+
+## 2026-06-22 Current Merged Plan
+
+**Merged sources:**
+- Existing plan: `docs/superpowers/plans/2026-06-22-pet-store-optimization-phase1-plan.md`
+- Supplement spec: `docs/superpowers/specs/2026-06-22-pet-store-optimization-phase1-supplement.md`
+
+The merged plan narrows the implementation goal from "fully automated operations" to a safer and more sellable **daily customer operations loop**:
+
+`import customer data -> generate today's follow-up opportunities -> generate explainable scripts -> staff confirms/sends -> record outcome -> dashboard review`
+
+This section is the canonical current plan. The detailed task code below should be implemented with these merged requirements when older snippets still reflect the pre-supplement assumptions.
+
+### Product Direction
+
+- Keep the brand as "宠店 AI 管家", but make the first-screen workflow "每日三件事": who to contact today, what to say, and whether yesterday's contact created visits or repurchases.
+- Default Phase 1 outreach to controllable semi-automation. Staff confirmation stays the default for VIP, festival marketing, member upgrade messages, and any customer with compliance risk.
+- Treat content operations as a supporting growth module. Do not let content calendar, short-video templates, or image generation block the customer follow-up loop.
+- Make every AI recommendation explainable. Each task must show the trigger rule, evidence, customer context, and suggested action before staff sends it.
+
+### Revised Phase Priorities
+
+| Priority | Must ship in V1.1 | Implementation target |
+|---|---|---|
+| P0 | Daily customer loop | Customer/pet/service import, today's opportunity tasks, grooming due, dormant wake-up, trial follow-up, template scripts, task status/result backfill, starter dashboard |
+| P0 | License trust basics | 14-day full-feature trial, plan-based offline grace, non-blocking downgrade mode, expiration/heartbeat reminders |
+| P0 | WeCom compliance | Customer authorization check, per-customer frequency cap, daily plan quota, sensitive-word audit, complete outreach logs |
+| P1 | Usability and packaging | VIP confirmation flow, internal WeCom notifications, 15 content templates, 7-day content calendar, role permissions, license management page |
+| P1 | Measurable outcome | Outreach reply rate, 7-day visit attribution, attributed revenue, action recommendations, metric explanations |
+| P2 | Growth depth | Partial auto-send, customer health score, A/B scripts, content interaction backfill, monthly report |
+| P3 | Scale and hardening | Multi-store support, POS integration, complex LTV prediction, automatic publishing, template marketplace, service-layer refactor |
+
+### License Changes To Apply To Tasks 1-6
+
+- Trial: add local `LicenseStorage.create_trial_token()` and `is_trial_token()`; trial token grants `growth` plan for 14 days and bypasses heartbeat checks.
+- Offline grace: replace the old fixed 7-day grace assumption with plan-based grace: starter 7 days, professional 15 days, growth 30 days.
+- Downgrade behavior: after grace expires, keep customer files and manual script generation available; block auto-send and dashboard refresh instead of fully locking the app.
+- Management page: add `/license` showing current plan, expiry date, remaining AI calls, offline remaining days, renewal/upgrade entry, and activation-code change entry.
+- Device migration: License Server admin can unbind `machine_id`; reactivation with the original activation code issues a new token and invalidates the old token.
+
+### Outreach Changes To Apply To Tasks 7-9
+
+- Expand default rules from the older limited rule set to these 10 rules: grooming due, dormant wake-up, trial follow-up, vaccine due, deworming due, pet birthday, festival marketing, product repurchase, post-service follow-up, member upgrade.
+- Add `send_mode` to rule configuration. Festival marketing and member upgrade default to `manual_confirm`; other rules may auto-send only after compliance checks pass.
+- Add decision-card data to generated tasks:
+
+```yaml
+trigger_rule: "洗护周期到期"
+evidence:
+  last_grooming_date: "2026-05-28"
+  days_since: 25
+  suggested_cycle: 21
+customer_context:
+  name: "豆豆妈妈"
+  tier: "VIP"
+  total_spent: 6200
+  visit_count: 12
+  recent_response_rate: "100% (3/3)"
+suggestion: "上次做的是精剪造型，建议在话术中提及保持造型效果"
+```
+
+- Add attribution fields to `OutreachLog`: `response_time`, `response_content`, `appointment_created`, `appointment_time`, `service_within_7d`, `linked_service_record_id`, `attributed_revenue`.
+- Add DND checks before dispatch: global DND, customer temporary DND window, channel DND, message-type DND, store quiet hours.
+- Add WeCom hard limits before send: one message per customer per day, five per customer per month, and plan-level daily caps of starter 50, professional 200, growth 500.
+
+### Content Changes To Apply To Tasks 10-11
+
+- Expand the template library to 15 templates: five Moments templates, five Xiaohongshu templates, and five Douyin/short-video templates.
+- Add `content_engine/generator.py::auto_fill_variables(template_code, store_id, session)` to pull variables from recent `ServiceRecord`, `Pet`, `Customer`, and template usage history.
+- Keep image generation as growth-plan-only and non-blocking. If the image API fails, fall back to generating an editable image prompt.
+- Add manual content performance backfill for likes, comments, shares, and consultations; use it later for high-performing template tags and low-performing content suggestions.
+
+### Dashboard And UX Changes To Apply To Tasks 12-14
+
+- Replace the old starter dashboard emphasis with AI value metrics: AI recommended follow-ups, pending outreach tasks, yesterday's outreach-to-visit conversion, estimated recovered revenue.
+- Add "action recommendations" below dashboard metrics, for example dormant customer wake-up, high-performing rule suggestion, content due today, and member upgrade suggestion.
+- Add metric explanation popovers for LTV, churn warning, customer health, outreach-to-visit conversion, estimated recovered revenue, and outreach ROI.
+- Rebuild the homepage around "每日三件事": `今天该联系谁`, `应该怎么说`, `联系后有没有带来效果`.
+- Add role permissions: owner can see revenue/config/export/subscription, staff can process tasks and scripts but cannot see revenue or subscription data, admin can manage technical/license settings but cannot see customer data.
+
+### Additional Files Required By The Supplement
+
+| File | Purpose |
+|---|---|
+| `outreach/sensitive_words.json` | Local sensitive-word library for medical, platform, and misleading-claim terms |
+| `outreach/content_auditor.py` | Rule-based audit for AI scripts and content before send/publish |
+| `web/templates/rules_config.html` | Visual outreach rule configuration page |
+| `web/templates/license_info.html` | License management page |
+| `web/templates/settings.html` | Store settings page for scan times, DND hours, frequency caps, and WeCom settings |
+| `web/templates/monitoring.html` | Admin/owner monitoring page for outreach, license, AI, WeCom, database, and disk health |
+| `content_engine/templates/douyin/*.yaml` | Five short-video templates listed in the supplement spec |
+
+### Acceptance Criteria Added By The Supplement
+
+- A new store can complete the full daily loop from imported data to task generation, script confirmation, send/backfill, and dashboard review without configuring advanced automation.
+- A 14-day trial user can use growth-plan features locally without License Server availability.
+- A disconnected licensed store enters the correct plan-based grace behavior and never loses access to customer files or manual script generation.
+- No WeCom message sends without authorization, outside frequency caps, or with blocked sensitive words.
+- Every generated task explains why it was created and what evidence supports it.
+- Dashboard numbers for reply rate, 7-day visit conversion, attributed revenue, and estimated recovered revenue are derived from stored `OutreachLog` and `ServiceRecord` data.
 
 ## Global Constraints
 
@@ -16,6 +166,10 @@
 - SQLite via SQLAlchemy — no new database engine
 - TDD: write failing test first, then implementation
 - License Server is a separate repo `aipet-license` deployed independently
+- License behavior follows the merged plan: 14-day local trial, starter/professional/growth offline grace of 7/15/30 days, and downgrade instead of full lockout
+- External WeCom sends must pass authorization checks, DND checks, plan quota checks, per-customer frequency caps, and sensitive-word audit
+- Every generated outreach task must include a decision card with trigger rule, evidence, customer context, and suggested action
+- Starter dashboard must prioritize AI value metrics and action recommendations, not generic revenue counters
 - Naming follows existing conventions: snake_case files, PascalCase SQLAlchemy models
 - CLI commands follow existing Click group pattern in `main.py`
 - Web routes follow existing FastAPI factory pattern in `web/app.py`
@@ -50,6 +204,8 @@
 | `outreach/engine.py` | Customer segmentation (VIP/regular/DND) + dispatch |
 | `outreach/auto_sender.py` | WeCom external contact auto-send |
 | `outreach/confirm_flow.py` | VIP confirmation page backend |
+| `outreach/sensitive_words.json` | Local sensitive-word library for medical, platform, and misleading-claim terms |
+| `outreach/content_auditor.py` | Rule-based audit for AI scripts and content before send/publish |
 | `content_engine/__init__.py` | Module init |
 | `content_engine/models.py` | ContentTemplate SQLAlchemy model |
 | `content_engine/templates/moments/before_after.yaml` | 朋友圈-洗护前后对比 template |
@@ -62,45 +218,61 @@
 | `content_engine/templates/xiaohongshu/pitfall_guide.yaml` | 小红书-避坑指南 template |
 | `content_engine/templates/xiaohongshu/product_review.yaml` | 小红书-好物测评 template |
 | `content_engine/templates/xiaohongshu/seasonal_care.yaml` | 小红书-季节养护 template |
+| `content_engine/templates/douyin/grooming_process.yaml` | Douyin short-video grooming process template |
+| `content_engine/templates/douyin/pet_daily.yaml` | Douyin short-video pet daily template |
+| `content_engine/templates/douyin/before_after.yaml` | Douyin short-video before/after template |
+| `content_engine/templates/douyin/knowledge_talk.yaml` | Douyin short-video knowledge talk template |
+| `content_engine/templates/douyin/product_unboxing.yaml` | Douyin short-video product unboxing template |
 | `content_engine/generator.py` | Template rendering + AI fill + multi-variant generation |
 | `content_engine/calendar.py` | Calendar view data logic |
 | `analytics/__init__.py` | Module init |
 | `analytics/metrics.py` | Metric calculation engine |
 | `analytics/dashboard.py` | Tiered dashboard data aggregation |
+| `web/templates/license_info.html` | License management page |
+| `web/templates/rules_config.html` | Visual outreach rule configuration page |
+| `web/templates/settings.html` | Store settings page for scan times, DND hours, frequency caps, and WeCom settings |
+| `web/templates/monitoring.html` | Admin/owner monitoring page for outreach, license, AI, WeCom, database, and disk health |
 
 ### Modified files (aipet-app repo)
 
 | File | Change |
 |------|--------|
-| `app/models.py` | Add OutreachRule, OutreachLog, ContentTemplate; extend ContentItem with hashtags/image_prompt/scheduled_date/interaction_data |
+| `app/models.py` | Add OutreachRule, OutreachLog, ContentTemplate; extend Pet with vaccine/deworming/birthday fields; extend OutreachLog with attribution fields; extend Staff with role; extend Customer with DND fields; extend ContentItem with hashtags/image_prompt/scheduled_date/interaction_data |
 | `app/database.py` | Import new models so they're created by `init_db()` |
-| `web/app.py` | Add outreach confirm, content calendar, analytics routes; add license middleware |
-| `web/templates/dashboard.html` | Upgrade to tiered dashboard (starter + professional views) |
+| `web/app.py` | Add outreach confirm, content calendar, analytics, license, settings, rules config, monitoring routes; add license middleware |
+| `web/templates/dashboard.html` | Upgrade to daily-three-things homepage and tiered dashboard with AI value metrics and action recommendations |
 | `web/templates/content_calendar.html` | New: content calendar page |
 | `web/templates/outreach_confirm.html` | New: VIP confirmation page |
 | `web/templates/activate.html` | New: license activation page |
-| `core/wecom_client.py` | Add `send_external_text()` method for external contact messaging |
+| `web/templates/license_info.html` | New: license management page |
+| `web/templates/rules_config.html` | New: visual outreach rule configuration page |
+| `web/templates/settings.html` | New: scan time, DND, frequency cap, and WeCom settings page |
+| `web/templates/monitoring.html` | New: owner/admin system monitoring page |
+| `core/wecom_client.py` | Add `send_external_text()` method for external contact messaging with stable errors and retry behavior |
 | `core/scheduler.py` | Add outreach scan/send jobs |
-| `main.py` | Add CLI commands: `activate`, `outreach rules/scanned/sent`, `content templates/generate/calendar`, `analytics dashboard` |
+| `main.py` | Add CLI commands: `activate`, `trial`, `license status`, `outreach rules/scanned/sent`, `content templates/generate/calendar`, `analytics dashboard` |
 
 ### Test files
 
 | File | Tests for |
 |------|-----------|
 | `tests/test_licensing/test_client.py` | License client HTTP calls |
-| `tests/test_licensing/test_storage.py` | Token cache storage |
-| `tests/test_outreach/test_rules.py` | Rule scanning logic |
-| `tests/test_outreach/test_engine.py` | Customer segmentation |
-| `tests/test_outreach/test_auto_sender.py` | Auto-send with mocked WeCom |
-| `tests/test_outreach/test_confirm_flow.py` | Confirm flow backend |
-| `tests/test_content_engine/test_generator.py` | Template rendering + AI fill |
+| `tests/test_licensing/test_storage.py` | Token cache storage, trial token, plan-based grace, downgrade behavior |
+| `tests/test_web/test_license_info.py` | License management page and status display |
+| `tests/test_outreach/test_rules.py` | Rule scanning logic for the 10 default rules |
+| `tests/test_outreach/test_engine.py` | Customer segmentation, DND checks, decision-card generation |
+| `tests/test_outreach/test_auto_sender.py` | Auto-send with mocked WeCom, authorization checks, quota/frequency caps |
+| `tests/test_outreach/test_content_auditor.py` | Sensitive-word and compliance audit |
+| `tests/test_outreach/test_confirm_flow.py` | Confirm flow backend and decision-card display data |
+| `tests/test_content_engine/test_generator.py` | Template rendering, AI fill, auto-filled variables |
 | `tests/test_content_engine/test_calendar.py` | Calendar data logic |
-| `tests/test_analytics/test_metrics.py` | Metric calculations |
-| `tests/test_analytics/test_dashboard.py` | Dashboard aggregation |
+| `tests/test_analytics/test_metrics.py` | Reply rate, 7-day visit conversion, attributed revenue, estimated recovered revenue |
+| `tests/test_analytics/test_dashboard.py` | Dashboard aggregation, AI value metrics, action recommendations |
 | `tests/test_web/test_activate.py` | Activation page + middleware |
 | `tests/test_web/test_outreach_web.py` | Outreach web routes |
 | `tests/test_web/test_content_web.py` | Content calendar web routes |
 | `tests/test_web/test_analytics_web.py` | Dashboard web routes |
+| `tests/test_web/test_settings_web.py` | Settings, rules configuration, and monitoring routes |
 
 ---
 
@@ -1158,14 +1330,23 @@ class LicenseStorage:
         except (ValueError, KeyError):
             return True
 
+    def offline_grace_days(self) -> int:
+        """Return plan-based offline grace days."""
+        data = self.get_token() or {}
+        return {
+            "starter": 7,
+            "professional": 15,
+            "growth": 30,
+        }.get(data.get("plan_code", "starter"), 7)
+
     def is_grace_period_ok(self) -> bool:
-        """True if within 7-day offline grace period since last save."""
+        """True if within the plan-based offline grace period since last save."""
         data = self.get_token()
         if data is None:
             return False
         try:
             saved_at = datetime.fromisoformat(data.get("saved_at", ""))
-            return (datetime.utcnow() - saved_at).days < 7
+            return (datetime.utcnow() - saved_at).days < self.offline_grace_days()
         except (ValueError, KeyError):
             return False
 
@@ -1360,7 +1541,7 @@ def create_license_middleware():
             try:
                 client.heartbeat(token_data["token"])
             except Exception:
-                pass  # Silent fail for heartbeat, 7-day grace handles offline
+                pass  # Silent fail for heartbeat; plan-based grace handles offline use
 
         return await call_next(request)
 
@@ -1797,7 +1978,7 @@ git commit -m "feat: add outreach rule models and scanning engine"
 
 **Interfaces:**
 - Consumes: `OutreachRule`, `OutreachLog`, `Customer` models; `WeComClient`; `LicenseStorage` for plan check
-- Produces: `segment_customers(session, store_id) -> (vip_ids, regular_ids)`, `dispatch_outreach(session, store_id)` → creates `FollowTask` + `OutreachLog`, auto-sends for regular customers
+- Produces: `segment_customers(session, store_id) -> (vip_ids, regular_ids)`, `dispatch_outreach(session, store_id)` -> creates explainable `FollowTask` + `OutreachLog`; sends only after send-mode, authorization, DND, quota, frequency, and content-audit checks pass
 
 - [ ] **Step 1: Write failing tests**
 
@@ -3275,21 +3456,30 @@ git commit -m "test: add integration test for full outreach flow"
 | Spec Section | Covered By |
 |---|---|
 | License activation + API (3.1-3.6) | Tasks 1-6 |
+| 14-day trial + plan-based offline grace | Tasks 5-6 + Current Merged Plan requirements |
+| License management + device migration | Tasks 4-6 + File Map additions |
 | Outreach rules + segmentation (4.1-4.4) | Tasks 7-9 |
+| 10-rule outreach library + decision cards | Tasks 7-9 + Current Merged Plan requirements |
+| WeCom authorization, frequency caps, DND, sensitive-word audit | Tasks 8-9 + `outreach/content_auditor.py` |
+| Outreach-to-visit attribution loop | Tasks 7-8 + Tasks 12-13 |
 | Content templates + calendar (5.1-5.5) | Tasks 10-11 |
+| 15-template library + Douyin templates + auto-fill variables | Tasks 10-11 + File Map additions |
 | Analytics dashboard tiers (6.1-6.3) | Tasks 12-13 |
+| Daily-three-things homepage + AI value metrics + action recommendations | Tasks 12-13 + Current Merged Plan requirements |
+| Role permissions + settings/rules/monitoring pages | Tasks 6, 9, 13-14 + File Map additions |
 | Subscription feature matrix (7) | Task 13 (dashboard tier check) |
 | Phase 1 scope (8) | All tasks |
 | Directory structure (9) | All file creation tasks |
 | Error handling (10) | Built into each module |
 | Testing strategy (11) | Test files in each task |
 | CLI + Web + Scheduler | Tasks 9, 11, 13, 14 |
+| Supplement spec merge | Current Merged Plan section at top of this file |
 
-No gaps found.
+No gaps found after the supplement merge. When executing older task snippets, use the Current Merged Plan section and updated File Map/Test files as the source of truth for changed scope.
 
 **2. Placeholder scan:** No TBD, TODO, "implement later", or vague steps. All code is concrete.
 
-**3. Type consistency:** `dispatch_outreach` returns `{"created": int}` — consumed by both scheduler (Task 14) and CLI (Task 14). `calculate_starter_metrics` returns `dict` with specific keys — consumed by `build_tiered_dashboard` (Task 13) and CLI (Task 14). All signatures match across tasks.
+**3. Type consistency:** `dispatch_outreach` returns `{"created": int}` and must attach decision-card metadata to generated outreach tasks; it is consumed by both scheduler (Task 14) and CLI (Task 14). `calculate_starter_metrics` returns a `dict` with AI value metrics and attribution metrics consumed by `build_tiered_dashboard` (Task 13) and CLI (Task 14). All merged signatures match across tasks.
 
 ---
 

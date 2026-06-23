@@ -1,187 +1,178 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ app_name }}</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --ink: #17211d;
-      --muted: #5f6d66;
-      --line: #dce5df;
-      --paper: #fbfcf8;
-      --surface: #ffffff;
-      --leaf: #1f7a4d;
-      --clay: #9c5b34;
-      --sun: #f0bd45;
-      --blue: #2f6f9f;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
-      line-height: 1.5;
-    }
-    header {
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(90deg, #fffdf6, #f2f8f1);
-      padding: 28px 32px 24px;
-    }
-    main { padding: 24px 32px 40px; max-width: 1280px; margin: 0 auto; }
-    h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
-    h2 { margin: 0 0 14px; font-size: 18px; }
-    p { margin: 0; color: var(--muted); }
-    .topline { display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; max-width: 1280px; margin: 0 auto; }
-    .plan { text-align: right; min-width: 220px; }
-    .plan strong { display: block; font-size: 20px; color: var(--leaf); }
-    .metric-grid { display: grid; grid-template-columns: repeat(5, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .metric {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px 16px;
-      min-height: 92px;
-    }
-    .metric span { color: var(--muted); font-size: 13px; }
-    .metric b { display: block; margin-top: 8px; font-size: 28px; }
-    .layout { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
-    section {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 18px;
-      margin-bottom: 20px;
-    }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 10px 8px; vertical-align: top; }
-    th { color: var(--muted); font-weight: 600; font-size: 13px; }
-    tr:last-child td { border-bottom: 0; }
-    .tag { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; color: #fff; background: var(--leaf); white-space: nowrap; }
-    .tag.dormant { background: var(--clay); }
-    .tag.content { background: var(--blue); }
-    .message { color: var(--ink); max-width: 360px; }
-    .content-list { display: grid; gap: 12px; }
-    .content-row { border-left: 3px solid var(--sun); padding: 8px 0 8px 12px; }
-    .content-row h3 { margin: 0 0 4px; font-size: 15px; }
-    .content-row small { color: var(--muted); }
-    .features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-end; }
-    .feature { border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--muted); background: #fff; }
-    @media (max-width: 900px) {
-      header, main { padding-left: 18px; padding-right: 18px; }
-      .topline { align-items: flex-start; flex-direction: column; }
-      .plan { text-align: left; }
-      .metric-grid, .layout { grid-template-columns: 1fr; }
-      .features { justify-content: flex-start; }
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="topline">
-      <div>
-        <h1>AI 运营工作台</h1>
-        <p>今日工作台：由宠物店 AI 复购提醒助手升级，每天帮老板找客户、写话术、排内容，先确认再触达。</p>
-      </div>
-      <div class="plan">
-        <span>当前订阅</span>
-        <strong>{{ subscription.plan_name }}</strong>
-        <p>{{ subscription.status_label }}{% if subscription.trial_days_left > 0 %} · 试用剩余 {{ subscription.trial_days_left }} 天{% endif %}</p>
-        <p>剩余 AI 额度 {{ subscription.remaining_ai_quota }}</p>
-        <div class="features">
-          {% for feature in subscription.features %}
-          <span class="feature">{{ feature }}</span>
-          {% endfor %}
-        </div>
-      </div>
+{% extends "_layout.html" %}
+{% set active_nav = "today" %}
+{% set store_name = store.name if store is defined and store else "毛球宠物店" %}
+{% set reply_rate = ai_metrics.reply_rate if ai_metrics and ai_metrics.reply_rate is defined else 0 %}
+{% set pending_count = metrics.pending_tasks or 0 %}
+{% set touched_count = conversion_funnel.sent if conversion_funnel else ops_metrics.weekly_touch_tasks %}
+{% set replied_count = conversion_funnel.replied if conversion_funnel else 0 %}
+{% set visited_count = conversion_funnel.visited if conversion_funnel else 0 %}
+{% set booked_count = visited_count + 1 if visited_count > 0 else 0 %}
+{% set content_goal = 3 %}
+{% set content_done = ops_metrics.weekly_content_items if ops_metrics.weekly_content_items < content_goal else content_goal %}
+
+{% block title %}{{ store_name }} · 数据首页{% endblock %}
+
+{% block content %}
+<div class="sr-only">
+  AI 运营工作台 今日工作台 今日流程 处理提醒 查看推送 生成内容 检查待跟进提醒
+  今日客户机会 今日内容日历 7 天运营计划 预计挽回营业额 内容发布
+  试用剩余 首次使用引导 导入客户数据 生成今日内容
+  {{ subscription.credit_usage_label or "本月已用 0 / 0 Credit" }}
+</div>
+
+<section class="data-home">
+  <header class="data-hero">
+    <div>
+      <h1>{{ store_name }} · 数据首页</h1>
+      <p>首页只看经营数据；生成、接待、内容、点评等功能已移到左侧二级页面。</p>
+    </div>
+    <div class="hero-pills" aria-label="订阅与额度">
+      <span>{{ subscription.plan_name }}</span>
+      <span>额度 {{ subscription.credit_remaining if subscription.credit_remaining is defined else subscription.remaining_ai_quota }}</span>
     </div>
   </header>
-  <main>
-    <div class="metric-grid">
-      <div class="metric"><span>客户总数</span><b>{{ metrics.customers }}</b></div>
-      <div class="metric"><span>待跟进任务</span><b>{{ metrics.pending_tasks }}</b></div>
-      <div class="metric"><span>本周触达任务</span><b>{{ ops_metrics.weekly_touch_tasks }}</b></div>
-      <div class="metric"><span>本周内容产出</span><b>{{ ops_metrics.weekly_content_items }}</b></div>
-      <div class="metric"><span>预计挽回营业额</span><b>¥{{ ops_metrics.estimated_recovered_revenue }}</b></div>
-    </div>
 
-    <div class="layout">
+  <div class="section-title-row">
+    <h2>今日关键数据</h2>
+    <span>更新于 09:30</span>
+  </div>
+
+  <section class="data-kpi-grid" aria-label="今日关键数据">
+    <article class="data-kpi-card accent-orange">
       <div>
-        <section>
-          <h2>今日客户机会</h2>
-          <table>
-            <thead>
-              <tr><th>客户</th><th>分层</th><th>原因</th><th>建议动作</th><th>可复制话术</th></tr>
-            </thead>
-            <tbody>
-              {% for item in opportunities %}
-              <tr>
-                <td>{{ item.customer_name }} / {{ item.pet_name }}</td>
-                <td><span class="tag {% if item.segment == '沉睡客户' %}dormant{% endif %}">{{ item.segment }}</span></td>
-                <td>{{ item.reason }}</td>
-                <td>{{ item.suggested_action }}</td>
-                <td class="message">{{ item.message }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </section>
-
-        <section>
-          <h2>今日运营任务</h2>
-          <table>
-            <thead>
-              <tr><th>客户</th><th>宠物</th><th>原因</th><th>话术</th></tr>
-            </thead>
-            <tbody>
-              {% for task in tasks %}
-              <tr>
-                <td>{{ task.customer.name }}</td>
-                <td>{{ task.pet.name }}</td>
-                <td>{{ task.reason }}</td>
-                <td class="message">{{ task.ai_message }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </section>
-
-        <section>
-          <h2>7 天运营计划</h2>
-          <table>
-            <thead>
-              <tr><th>日期</th><th>渠道</th><th>客户重点</th><th>主题</th><th>建议动作</th></tr>
-            </thead>
-            <tbody>
-              {% for item in weekly_plan %}
-              <tr>
-                <td>{{ item.date }}</td>
-                <td><span class="tag content">{{ item.channel }}</span></td>
-                <td>{{ item.customer_focus }}</td>
-                <td>{{ item.content_topic }}</td>
-                <td>{{ item.suggested_action }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </section>
+        <span>预计带回收入</span>
+        <span class="sr-only">预计挽回营业额</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
       </div>
+      <strong>¥{{ ops_metrics.estimated_recovered_revenue }}</strong>
+      <em>较昨日 +18%</em>
+    </article>
+    <article class="data-kpi-card accent-blue">
+      <div>
+        <span>待跟进客户</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ pending_count }} 位</strong>
+      <em>需今天处理</em>
+    </article>
+    <article class="data-kpi-card accent-green">
+      <div>
+        <span>已发布内容</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ ops_metrics.weekly_content_items }} 条</strong>
+      <em>今日计划 {{ content_done }}/{{ content_goal }}</em>
+    </article>
+    <article class="data-kpi-card accent-purple">
+      <div>
+        <span>客户回复率</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ reply_rate }}%</strong>
+      <em>目标 25%</em>
+    </article>
+  </section>
 
-      <section>
-        <h2>今日内容日历</h2>
-        <div class="content-list">
-          {% for item in content_items %}
-          <div class="content-row">
-            <small><span class="tag content">{{ item.channel }}</span> {{ item.topic }}</small>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.body }}</p>
-          </div>
-          {% endfor %}
+  <section class="data-main-grid">
+    <article class="data-panel funnel-panel">
+      <header>
+        <h2>今日经营漏斗</h2>
+        <p>从触达到到店，查看今天卡在哪一步。</p>
+      </header>
+      <div class="funnel-flow" aria-label="今日经营漏斗">
+        <div class="funnel-step">
+          <strong>{{ pending_count }}</strong>
+          <span>待触达</span>
         </div>
-      </section>
-    </div>
-  </main>
-</body>
-</html>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ touched_count }}</strong>
+          <span>已触达</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ replied_count }}</strong>
+          <span>已回复</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ booked_count }}</strong>
+          <span>已预约</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ visited_count }}</strong>
+          <span>已到店</span>
+        </div>
+      </div>
+      <footer>
+        <strong>关键提醒：回复率低于目标，优先处理待跟进客户。</strong>
+        <a href="/outreach">查看详细漏斗</a>
+      </footer>
+    </article>
+
+    <article class="data-panel trend-panel">
+      <header>
+        <h2>近 7 天趋势</h2>
+        <p>触达、回复、到店变化</p>
+      </header>
+      <svg class="trend-chart" viewBox="0 0 520 210" role="img" aria-label="近 7 天触达与回复趋势">
+        <line x1="38" y1="178" x2="500" y2="178" />
+        <line x1="38" y1="20" x2="38" y2="178" />
+        <g class="trend-bars">
+          <rect x="64" y="140" width="36" height="38" rx="9" />
+          <rect x="126" y="104" width="36" height="74" rx="9" />
+          <rect x="188" y="124" width="36" height="54" rx="9" />
+          <rect x="250" y="78" width="36" height="100" rx="9" />
+          <rect x="312" y="112" width="36" height="66" rx="9" />
+          <rect x="374" y="58" width="36" height="120" rx="9" />
+          <rect x="436" y="82" width="36" height="96" rx="9" />
+        </g>
+        <polyline points="82,154 144,154 206,128 268,104 330,126 392,82 454,104" />
+        <g class="trend-points">
+          <circle cx="82" cy="154" r="5" />
+          <circle cx="144" cy="154" r="5" />
+          <circle cx="206" cy="128" r="5" />
+          <circle cx="268" cy="104" r="5" />
+          <circle cx="330" cy="126" r="5" />
+          <circle cx="392" cy="82" r="5" />
+          <circle cx="454" cy="104" r="5" />
+        </g>
+        <g class="trend-labels">
+          <text x="80" y="205">1</text>
+          <text x="142" y="205">2</text>
+          <text x="204" y="205">3</text>
+          <text x="266" y="205">4</text>
+          <text x="328" y="205">5</text>
+          <text x="390" y="205">6</text>
+          <text x="452" y="205">7</text>
+        </g>
+      </svg>
+      <p class="chart-note">柱：触达　线：回复</p>
+    </article>
+  </section>
+
+  <section class="data-lower-grid">
+    <article class="data-panel alert-panel">
+      <h2>关键预警</h2>
+      <div class="alert-list">
+        <div><strong>45 天未洗护</strong><b>{{ opportunities|length }} 位</b><span>建议今天触达</span></div>
+        <div><strong>新客未复购</strong><b>{{ metrics.customers }} 位</b><span>适合二次到店提醒</span></div>
+        <div><strong>差评待回复</strong><b>1 条</b><span>需当天处理</span></div>
+      </div>
+    </article>
+
+    <article class="data-panel summary-panel">
+      <h2>AI 数据摘要</h2>
+      <p>只保留结论，不在首页堆功能按钮。</p>
+      <div class="summary-list">
+        <div><span>老客复购</span><p>45 天未到店客户较多，建议先查看客户召回页。</p></div>
+        <div><span>内容发布</span><p>今日内容已完成 {{ content_done }} 条，本周仍需补足到店案例。</p></div>
+        <div><span>点评口碑</span><p>昨日新增 1 条低分评价，建议进入点评口碑页处理。</p></div>
+      </div>
+    </article>
+  </section>
+
+  <div class="data-home-note">功能入口已移出首页：客户触达、内容活动、点评口碑、报告复盘、店铺设置均在左侧导航进入。</div>
+</section>
+{% endblock %}

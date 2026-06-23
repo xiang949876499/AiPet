@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }} - 激活</title>
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #637068;
+      --line: #dce5df;
+      --paper: #f7faf5;
+      --surface: #ffffff;
+      --leaf: #1f7a4d;
+      --blue: #2f6f9f;
+      --danger: #b42318;
+      --warn: #8a5a00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    }
+    main {
+      width: min(980px, calc(100vw - 32px));
+      display: grid;
+      grid-template-columns: 0.9fr 1fr 1fr;
+      gap: 18px;
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 18px 48px rgba(23, 33, 29, 0.08);
+    }
+    h1, h2 { margin: 0 0 8px; letter-spacing: 0; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+    p { margin: 0 0 18px; color: var(--muted); }
+    .guide {
+      background: linear-gradient(150deg, #fffdf6, #eef7ef);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .guide ol { margin: 18px 0 0; padding-left: 20px; color: var(--muted); }
+    .guide li { margin-bottom: 10px; }
+    .safe-note {
+      border: 1px solid #dce5df;
+      border-radius: 8px;
+      background: #fbfcf8;
+      color: var(--muted);
+      padding: 12px;
+      font-size: 13px;
+      margin-top: 18px;
+    }
+    label { display: block; margin: 12px 0 7px; font-size: 14px; font-weight: 600; }
+    input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      min-height: 40px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 6px;
+      background: var(--leaf);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .secondary { background: var(--blue); }
+    .notice, .error {
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .notice { border: 1px solid #f1d48a; background: #fff9e8; color: var(--warn); }
+    .error { border: 1px solid #f2b8b5; background: #fff5f3; color: var(--danger); }
+    dl { margin: 12px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; }
+    dt { color: var(--muted); }
+    dd { margin: 0; font-weight: 700; }
+    @media (max-width: 720px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="guide">
+      <div>
+        <h1>启动后第一步</h1>
+        <p>先完成授权或开启试用，再进入 AI 运营工作台。</p>
+        <ol>
+          <li>有激活码时，填写门店信息并激活。</li>
+          <li>没有激活码也可以先开启本机试用。</li>
+          <li>进入后台后，从“今日流程”处理提醒和内容。</li>
+        </ol>
+      </div>
+      <div class="safe-note">试用不会自动发送外部客户消息；企业微信、小红书、抖音相关动作仍需要人工确认或额外配置。</div>
+    </section>
+    <section>
+      <h1>授权激活</h1>
+      <p>输入购买后的激活码，启用完整工作台能力。</p>
+      {% if reason == "expired" %}<div class="notice">授权已过期或离线宽限已用尽，请重新激活。</div>{% endif %}
+      {% if error %}<div class="error">{{ error }}</div>{% endif %}
+      <form method="post" action="/activate">
+        <label for="code">激活码</label>
+        <input id="code" name="code" placeholder="AIPET-PRO-XXXX" required autofocus>
+        <label for="store_name">门店名称</label>
+        <input id="store_name" name="store_name" placeholder="豆豆宠物店" required>
+        <label for="phone">手机号</label>
+        <input id="phone" name="phone" placeholder="用于找回授权">
+        <button type="submit">激活</button>
+      </form>
+    </section>
+    <section>
+      <h2>先试用</h2>
+      <p>没有激活码时，可以先开启本机 14 天试用，用于演示和内部验证。</p>
+      <form method="post" action="/activate/trial">
+        <button class="secondary" type="submit">开启 14 天试用</button>
+      </form>
+      <dl>
+        <dt>当前状态</dt><dd>{{ status.mode }}</dd>
+        <dt>当前套餐</dt><dd>{{ status.plan_code }}</dd>
+        <dt>离线剩余</dt><dd>{{ status.offline_remaining_days }} 天</dd>
+      </dl>
+    </section>
+  </main>
+</body>
+</html>

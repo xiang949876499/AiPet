@@ -5,12 +5,21 @@ from app.models import Store, StoreSubscription, SubscriptionPlan
 
 DEFAULT_PLANS = [
     {
+        "code": "experience",
+        "name": "体验版",
+        "monthly_price": 19,
+        "annual_price": 190,
+        "ai_quota_monthly": 100,
+        "features": "轻度试用,点评回复,基础内容生成",
+        "is_recommended": False,
+    },
+    {
         "code": "starter",
         "name": "入门版",
         "monthly_price": 199,
         "annual_price": 1990,
-        "ai_quota_monthly": 80,
-        "features": "客户提醒,基础话术,手动复制发送",
+        "ai_quota_monthly": 500,
+        "features": "客户提醒,基础话术,手动复制发送,内容草稿",
         "is_recommended": False,
     },
     {
@@ -18,8 +27,8 @@ DEFAULT_PLANS = [
         "name": "专业版",
         "monthly_price": 499,
         "annual_price": 4990,
-        "ai_quota_monthly": 300,
-        "features": "企业微信,内容日历,客户分层,复购追踪",
+        "ai_quota_monthly": 1500,
+        "features": "企业微信,内容日历,客户分层,复购追踪,活动方案",
         "is_recommended": True,
     },
     {
@@ -27,17 +36,8 @@ DEFAULT_PLANS = [
         "name": "增长版",
         "monthly_price": 999,
         "annual_price": 9990,
-        "ai_quota_monthly": 900,
-        "features": "活动Agent,自媒体批量生成,月度报告",
-        "is_recommended": False,
-    },
-    {
-        "code": "managed",
-        "name": "代运营包",
-        "monthly_price": 1999,
-        "annual_price": 0,
-        "ai_quota_monthly": 1500,
-        "features": "内容规划,活动策划,素材托管",
+        "ai_quota_monthly": 3000,
+        "features": "活动Agent,自媒体批量生成,周报,体检报告",
         "is_recommended": False,
     },
 ]
@@ -92,10 +92,25 @@ def consume_ai_quota(db_session, store_id: int, units: int) -> bool:
     if subscription.status == "trial_expired":
         db_session.commit()
         return False
-    if subscription.remaining_ai_quota < units:
+    plan_quota = subscription.plan.ai_quota_monthly if subscription.plan else 0
+    if subscription.ai_quota_used + units > plan_quota:
         return False
-    subscription.ai_quota_used += units
+    # Atomic SQL update: only increment if still within quota
+    result = (
+        db_session.query(StoreSubscription)
+        .filter(
+            StoreSubscription.id == subscription.id,
+            StoreSubscription.ai_quota_used + units <= plan_quota,
+        )
+        .update(
+            {StoreSubscription.ai_quota_used: StoreSubscription.ai_quota_used + units},
+            synchronize_session="fetch",
+        )
+    )
     db_session.commit()
+    if result == 0:
+        return False
+    db_session.refresh(subscription)
     return True
 
 

@@ -84,9 +84,10 @@ def test_seed_subscription_plans_creates_recommended_professional_tier(db_sessio
     seed_subscription_plans(db_session)
 
     plans = {plan.code: plan for plan in db_session.query(SubscriptionPlan).all()}
-    assert set(plans) == {"starter", "professional", "growth", "managed"}
+    assert set(plans) == {"experience", "starter", "professional", "growth"}
     assert plans["professional"].is_recommended is True
     assert plans["professional"].monthly_price == 499
+    assert plans["professional"].ai_quota_monthly == 1500
 
 
 def test_subscription_snapshot_includes_trial_status(db_session, sample_records):

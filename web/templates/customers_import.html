@@ -1,0 +1,89 @@
+{% extends "_layout.html" %}
+{% set active_nav = "customers" %}
+
+{% block title %}导入客户数据 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>导入客户数据</h1>
+    <p>上传 CSV 文件，批量创建或更新客户、宠物和洗护周期信息。</p>
+  </div>
+  <a class="btn-secondary" href="/customers">查看客户列表</a>
+</div>
+
+{% if result %}
+<section class="card">
+  <div class="card-header"><h2>导入完成</h2></div>
+  <div class="card-body stack">
+    <p>新增客户 {{ result.created_customers }}，更新客户 {{ result.updated_customers }}，新增宠物 {{ result.created_pets }}，跳过 {{ result.skipped }}。</p>
+    <div class="button-row">
+      <form method="post" action="/customers/import/generate-reminders">
+        <button class="btn-primary" type="submit">生成今日提醒</button>
+      </form>
+      <a class="btn-secondary" href="/customers">查看客户列表</a>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card"><span>新增客户</span><strong>{{ result.created_customers }}</strong></div>
+      <div class="metric-card"><span>更新客户</span><strong>{{ result.updated_customers }}</strong></div>
+      <div class="metric-card"><span>新增宠物</span><strong>{{ result.created_pets }}</strong></div>
+      <div class="metric-card"><span>跳过行数</span><strong>{{ result.skipped }}</strong></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if preview %}
+<section class="card" style="margin-top:16px;">
+  <div class="card-header"><h2>预检完成</h2></div>
+  <div class="card-body stack">
+    <p>总行数 {{ preview.total_rows }}，可导入 {{ preview.ready_rows }}，跳过 {{ preview.skipped_rows }}。</p>
+    {% if preview.issues %}
+    <div class="stack">
+      {% for issue in preview.issues %}
+      <div class="decision-card">
+        <h3>第 {{ issue.row_number }} 行 · {{ issue.field }}</h3>
+        <p>{{ issue.message }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p>没有发现明显问题，可以直接导入。</p>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if error %}
+<div class="empty-state">
+  {% if error == "missing_file" %}请选择要上传的 CSV 文件。{% elif error == "empty_file" %}CSV 文件为空，请重新选择。{% elif error == "no_store" %}当前没有可导入的门店，请先导入演示数据或创建门店。{% else %}导入失败，请检查文件后重试。{% endif %}
+</div>
+{% endif %}
+
+<div class="two-column" style="margin-top:16px;">
+  <section class="card">
+    <div class="card-header"><h2>上传 CSV 文件</h2></div>
+    <div class="card-body stack">
+      <p>重复导入时，会优先按门店内手机号匹配客户，避免产生重复客户。</p>
+      <a class="btn-secondary" href="/customers/import/template">下载 CSV 模板</a>
+      <form class="stack" method="post" action="/customers/import" enctype="multipart/form-data">
+        <input class="app-search" name="csv_file" type="file" accept=".csv,text/csv" required>
+        <div class="button-row">
+          <button class="btn-secondary" type="submit" formaction="/customers/import/preview">预检文件</button>
+          <button class="btn-primary" type="submit">开始导入</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header"><h2>建议表头</h2></div>
+    <div class="card-body stack">
+      <pre class="pre-wrap">客户姓名,手机号,微信名,宠物名,宠物类型,品种,洗护周期天数,最近到店</pre>
+      <p>最近到店支持 2026-06-01 或 2026/06/01。</p>
+      <p>洗护周期为空时，默认按 21 天计算。</p>
+      <p>宠物名为空时，只导入客户资料。</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

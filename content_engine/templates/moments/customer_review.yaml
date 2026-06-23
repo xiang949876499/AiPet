@@ -1,0 +1,9 @@
+code: moments_customer_review
+channel: moments
+topic: customer_review
+title: "Thank you, {customer_name}"
+body: "We are happy {pet_name} enjoyed the latest visit."
+hashtags:
+  - review
+  - store-life
+image_prompt: "Friendly customer review social post."

@@ -1,0 +1,32 @@
+{% extends "_layout.html" %}
+{% set active_nav = "settings" %}
+
+{% block title %}门店设置 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>门店设置</h1>
+    <p>查看自动扫描、安静时段和触达频控等运营参数。</p>
+  </div>
+</div>
+
+<section class="metric-grid">
+  <div class="metric-card"><span>扫描时间</span><strong>08:00</strong></div>
+  <div class="metric-card"><span>安静时段</span><strong>21:00-08:00</strong></div>
+  <div class="metric-card"><span>频控规则</span><strong>每天 1 次，每月 5 次</strong></div>
+</section>
+
+<section class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>相关配置</h2>
+  </div>
+  <div class="card-body">
+    <div class="button-row">
+      <a class="btn-secondary" href="/settings/rules">触达规则</a>
+      <a class="btn-secondary" href="/license">授权信息</a>
+      <a class="btn-secondary" href="/admin/monitoring">系统监控</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
