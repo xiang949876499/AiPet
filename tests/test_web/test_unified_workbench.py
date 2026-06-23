@@ -95,6 +95,8 @@ def test_static_shell_assets_are_served(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert "--color-primary" in response.text
     assert ".app-shell" in response.text
+    assert ".sidebar-quick-links" in response.text
+    assert "body.shell-nav-open .sidebar-quick-links" in response.text
 
     script = client.get("/static/app.js")
     assert script.status_code == 200
