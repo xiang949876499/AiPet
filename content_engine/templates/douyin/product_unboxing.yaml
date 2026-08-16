@@ -1,0 +1,9 @@
+code: douyin_product_unboxing
+channel: douyin
+topic: product_unboxing
+title: "Pet product unboxing"
+body: "Show what the product is, who it fits, and how to use it safely."
+hashtags:
+  - unboxing
+  - pet-products
+image_prompt: "Vertical pet product unboxing cover."

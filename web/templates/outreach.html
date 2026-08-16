@@ -1,0 +1,103 @@
+{% extends "_layout.html" %}
+{% set active_nav = "outreach" %}
+
+{% block title %}客户触达 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>客户触达</h1>
+    <p>把待生成话术、人工确认、内部推送和已发送记录收拢到一个工作流里。</p>
+  </div>
+  <a class="btn-primary" href="/customers">选择客户</a>
+</div>
+
+<nav class="tabs" aria-label="触达状态">
+  <a class="tab" href="#generate">待生成话术 <strong>{{ counts.pending_generation }}</strong></a>
+  <a class="tab" href="#confirm">待确认 <strong>{{ counts.pending_confirm }}</strong></a>
+  <a class="tab" href="#send">待发送 <strong>{{ counts.pending_send }}</strong></a>
+  <a class="tab" href="#sent">已发送 <strong>{{ counts.sent }}</strong></a>
+  <a class="tab" href="#all">全部 <strong>{{ counts.all }}</strong></a>
+</nav>
+
+<section id="all" class="card">
+  <div class="card-header">
+    <h2>今日决策卡片</h2>
+  </div>
+  <div class="card-body">
+    {% if tasks %}
+    <div class="stack">
+      {% for task in tasks %}
+      <article class="decision-card">
+        <h3>{{ task.customer.name }} / {{ task.pet.name }} · {{ task.task_type }}</h3>
+        <div class="decision-meta">状态：{{ task.status }} · 优先级：{{ task.priority }}</div>
+        <p><strong>决策依据：</strong>{{ task.reason }}</p>
+        <p><strong>建议动作：</strong>{{ task.suggested_action }}</p>
+        {% if task.ai_message %}
+        <div class="script-box">{{ task.ai_message }}</div>
+        {% else %}
+        <div class="script-box">尚未生成话术，可从复购规则重新扫描或进入客户详情补充资料。</div>
+        {% endif %}
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+          <form method="post" action="/reminders/{{ task.id }}/mark-sent">
+            <button class="btn-secondary" type="submit">标记已发送</button>
+          </form>
+          <form method="post" action="/reminders/{{ task.id }}/push-internal">
+            <button class="btn-secondary" type="submit">生成内部提醒</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">暂无触达任务。导入客户数据后，系统会根据复购周期和沉睡状态生成建议。</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="confirm" class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>待确认消息</h2>
+  </div>
+  <div class="card-body">
+    {% if confirmations %}
+    <div class="stack">
+      {% for message in confirmations %}
+      <article class="decision-card">
+        <h3>{{ message.customer_name }} / {{ message.pet_name }}</h3>
+        <p>{{ message.ai_message }}</p>
+        <a class="btn-secondary" href="/outreach/confirm">去确认</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">当前没有需要人工确认的外部触达。</div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="send" class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>内部推送队列</h2>
+  </div>
+  <div class="card-body">
+    {% if push_tasks %}
+    <div class="stack">
+      {% for push_task in push_tasks %}
+      <article class="decision-card">
+        <h3>{{ push_task.channel }} · {{ push_task.status }}</h3>
+        <p>{{ push_task.content }}</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+          <form method="post" action="/push-tasks/{{ push_task.id }}/approve"><button class="btn-secondary" type="submit">确认发送</button></form>
+          <form method="post" action="/push-tasks/{{ push_task.id }}/send"><button class="btn-primary" type="submit">立即发送</button></form>
+          <form method="post" action="/push-tasks/{{ push_task.id }}/skip"><button class="btn-secondary" type="submit">跳过</button></form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">暂无内部推送任务。</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

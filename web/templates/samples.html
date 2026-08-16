@@ -1,0 +1,38 @@
+{% extends "_layout.html" %}
+{% set active_nav = "customers" %}
+
+{% block title %}试用装管理 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>试用装管理</h1>
+    <p>跟踪领取记录、回访反馈和转化金额。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead>
+        <tr><th>客户</th><th>宠物</th><th>产品</th><th>领取时间</th><th>反馈</th><th>是否转化</th><th>转化金额</th></tr>
+      </thead>
+      <tbody>
+        {% for trial in trials %}
+        <tr>
+          <td>{{ trial.customer_name }}</td>
+          <td>{{ trial.pet_name }}</td>
+          <td>{{ trial.product_name }}</td>
+          <td>{{ trial.receive_time.strftime("%Y-%m-%d") }}</td>
+          <td>{{ trial.feedback or "待反馈" }}</td>
+          <td><span class="tag {{ 'tag-success' if trial.converted else '' }}">{{ "已转化" if trial.converted else "未转化" }}</span></td>
+          <td>¥{{ trial.converted_amount or 0 }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty-state">暂无试用装领取记录。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+code: moments_pet_knowledge
+channel: moments
+topic: pet_knowledge
+title: "Pet care tip from {store_name}"
+body: "A small weekly care habit keeps {breed} coats easier to maintain."
+hashtags:
+  - pet-care
+  - knowledge
+image_prompt: "Warm pet care education card."

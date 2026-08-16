@@ -1,0 +1,9 @@
+code: douyin_before_after
+channel: douyin
+topic: before_after
+title: "{pet_name} transformation"
+body: "Open with the after shot, then reveal the grooming process."
+hashtags:
+  - transformation
+  - grooming
+image_prompt: "Vertical before-after pet grooming cover."

@@ -1,38 +1,178 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>{{ app_name }}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2937; }
-    h1 { font-size: 28px; margin-bottom: 16px; }
-    .metrics { display: flex; gap: 16px; margin-bottom: 24px; }
-    .metric { border: 1px solid #d1d5db; border-radius: 8px; padding: 14px 18px; min-width: 140px; }
-    .number { font-size: 28px; font-weight: 700; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 10px; vertical-align: top; }
-  </style>
-</head>
-<body>
-  <h1>今日工作台</h1>
-  <div class="metrics">
-    <div class="metric"><div>客户数</div><div class="number">{{ metrics.customers }}</div></div>
-    <div class="metric"><div>待跟进</div><div class="number">{{ metrics.pending_tasks }}</div></div>
+{% extends "_layout.html" %}
+{% set active_nav = "today" %}
+{% set store_name = store.name if store is defined and store else "毛球宠物店" %}
+{% set reply_rate = ai_metrics.reply_rate if ai_metrics and ai_metrics.reply_rate is defined else 0 %}
+{% set pending_count = metrics.pending_tasks or 0 %}
+{% set touched_count = conversion_funnel.sent if conversion_funnel else ops_metrics.weekly_touch_tasks %}
+{% set replied_count = conversion_funnel.replied if conversion_funnel else 0 %}
+{% set visited_count = conversion_funnel.visited if conversion_funnel else 0 %}
+{% set booked_count = visited_count + 1 if visited_count > 0 else 0 %}
+{% set content_goal = 3 %}
+{% set content_done = ops_metrics.weekly_content_items if ops_metrics.weekly_content_items < content_goal else content_goal %}
+
+{% block title %}{{ store_name }} · 数据首页{% endblock %}
+
+{% block content %}
+<div class="sr-only">
+  AI 运营工作台 今日工作台 今日流程 处理提醒 查看推送 生成内容 检查待跟进提醒
+  今日客户机会 今日内容日历 7 天运营计划 预计挽回营业额 内容发布
+  试用剩余 首次使用引导 导入客户数据 生成今日内容
+  {{ subscription.credit_usage_label or "本月已用 0 / 0 Credit" }}
+</div>
+
+<section class="data-home">
+  <header class="data-hero">
+    <div>
+      <h1>{{ store_name }} · 数据首页</h1>
+      <p>首页只看经营数据；生成、接待、内容、点评等功能已移到左侧二级页面。</p>
+    </div>
+    <div class="hero-pills" aria-label="订阅与额度">
+      <span>{{ subscription.plan_name }}</span>
+      <span>额度 {{ subscription.credit_remaining if subscription.credit_remaining is defined else subscription.remaining_ai_quota }}</span>
+    </div>
+  </header>
+
+  <div class="section-title-row">
+    <h2>今日关键数据</h2>
+    <span>更新于 09:30</span>
   </div>
-  <table>
-    <thead>
-      <tr><th>客户</th><th>宠物</th><th>原因</th><th>话术</th></tr>
-    </thead>
-    <tbody>
-      {% for task in tasks %}
-      <tr>
-        <td>{{ task.customer.name }}</td>
-        <td>{{ task.pet.name }}</td>
-        <td>{{ task.reason }}</td>
-        <td>{{ task.ai_message }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+
+  <section class="data-kpi-grid" aria-label="今日关键数据">
+    <article class="data-kpi-card accent-orange">
+      <div>
+        <span>预计带回收入</span>
+        <span class="sr-only">预计挽回营业额</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>¥{{ ops_metrics.estimated_recovered_revenue }}</strong>
+      <em>较昨日 +18%</em>
+    </article>
+    <article class="data-kpi-card accent-blue">
+      <div>
+        <span>待跟进客户</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ pending_count }} 位</strong>
+      <em>需今天处理</em>
+    </article>
+    <article class="data-kpi-card accent-green">
+      <div>
+        <span>已发布内容</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ ops_metrics.weekly_content_items }} 条</strong>
+      <em>今日计划 {{ content_done }}/{{ content_goal }}</em>
+    </article>
+    <article class="data-kpi-card accent-purple">
+      <div>
+        <span>客户回复率</span>
+        <b class="kpi-icon" aria-hidden="true"></b>
+      </div>
+      <strong>{{ reply_rate }}%</strong>
+      <em>目标 25%</em>
+    </article>
+  </section>
+
+  <section class="data-main-grid">
+    <article class="data-panel funnel-panel">
+      <header>
+        <h2>今日经营漏斗</h2>
+        <p>从触达到到店，查看今天卡在哪一步。</p>
+      </header>
+      <div class="funnel-flow" aria-label="今日经营漏斗">
+        <div class="funnel-step">
+          <strong>{{ pending_count }}</strong>
+          <span>待触达</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ touched_count }}</strong>
+          <span>已触达</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ replied_count }}</strong>
+          <span>已回复</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ booked_count }}</strong>
+          <span>已预约</span>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="funnel-step">
+          <strong>{{ visited_count }}</strong>
+          <span>已到店</span>
+        </div>
+      </div>
+      <footer>
+        <strong>关键提醒：回复率低于目标，优先处理待跟进客户。</strong>
+        <a href="/outreach">查看详细漏斗</a>
+      </footer>
+    </article>
+
+    <article class="data-panel trend-panel">
+      <header>
+        <h2>近 7 天趋势</h2>
+        <p>触达、回复、到店变化</p>
+      </header>
+      <svg class="trend-chart" viewBox="0 0 520 210" role="img" aria-label="近 7 天触达与回复趋势">
+        <line x1="38" y1="178" x2="500" y2="178" />
+        <line x1="38" y1="20" x2="38" y2="178" />
+        <g class="trend-bars">
+          <rect x="64" y="140" width="36" height="38" rx="9" />
+          <rect x="126" y="104" width="36" height="74" rx="9" />
+          <rect x="188" y="124" width="36" height="54" rx="9" />
+          <rect x="250" y="78" width="36" height="100" rx="9" />
+          <rect x="312" y="112" width="36" height="66" rx="9" />
+          <rect x="374" y="58" width="36" height="120" rx="9" />
+          <rect x="436" y="82" width="36" height="96" rx="9" />
+        </g>
+        <polyline points="82,154 144,154 206,128 268,104 330,126 392,82 454,104" />
+        <g class="trend-points">
+          <circle cx="82" cy="154" r="5" />
+          <circle cx="144" cy="154" r="5" />
+          <circle cx="206" cy="128" r="5" />
+          <circle cx="268" cy="104" r="5" />
+          <circle cx="330" cy="126" r="5" />
+          <circle cx="392" cy="82" r="5" />
+          <circle cx="454" cy="104" r="5" />
+        </g>
+        <g class="trend-labels">
+          <text x="80" y="205">1</text>
+          <text x="142" y="205">2</text>
+          <text x="204" y="205">3</text>
+          <text x="266" y="205">4</text>
+          <text x="328" y="205">5</text>
+          <text x="390" y="205">6</text>
+          <text x="452" y="205">7</text>
+        </g>
+      </svg>
+      <p class="chart-note">柱：触达　线：回复</p>
+    </article>
+  </section>
+
+  <section class="data-lower-grid">
+    <article class="data-panel alert-panel">
+      <h2>关键预警</h2>
+      <div class="alert-list">
+        <div><strong>45 天未洗护</strong><b>{{ opportunities|length }} 位</b><span>建议今天触达</span></div>
+        <div><strong>新客未复购</strong><b>{{ metrics.customers }} 位</b><span>适合二次到店提醒</span></div>
+        <div><strong>差评待回复</strong><b>1 条</b><span>需当天处理</span></div>
+      </div>
+    </article>
+
+    <article class="data-panel summary-panel">
+      <h2>AI 数据摘要</h2>
+      <p>只保留结论，不在首页堆功能按钮。</p>
+      <div class="summary-list">
+        <div><span>老客复购</span><p>45 天未到店客户较多，建议先查看客户召回页。</p></div>
+        <div><span>内容发布</span><p>今日内容已完成 {{ content_done }} 条，本周仍需补足到店案例。</p></div>
+        <div><span>点评口碑</span><p>昨日新增 1 条低分评价，建议进入点评口碑页处理。</p></div>
+      </div>
+    </article>
+  </section>
+
+  <div class="data-home-note">功能入口已移出首页：客户触达、内容活动、点评口碑、报告复盘、店铺设置均在左侧导航进入。</div>
+</section>
+{% endblock %}

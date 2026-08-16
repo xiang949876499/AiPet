@@ -78,3 +78,25 @@ def test_wecom_client_fetches_oauth_userid_with_injected_http():
             {"access_token": "abc", "code": "login-code"},
         )
     ]
+
+
+def test_wecom_client_sends_external_text_with_injected_http():
+    from core.wecom_client import WeComClient
+
+    posts = []
+
+    def fetch_token(corp_id: str, app_secret: str):
+        return {"access_token": "abc", "expires_in": 7200}
+
+    def post_json(url: str, payload: dict):
+        posts.append((url, payload))
+        return {"errcode": 0, "errmsg": "ok"}
+
+    client = WeComClient(corp_id="cid", app_secret="sec", agent_id="agent-1", token_fetcher=fetch_token, post_json=post_json)
+
+    result = client.send_external_text("external-1", "Safe reminder")
+
+    assert result == {"errcode": 0, "errmsg": "ok"}
+    assert "externalcontact/message/send" in posts[0][0]
+    assert posts[0][1]["external_userid"] == ["external-1"]
+    assert posts[0][1]["sender"] == "agent-1"

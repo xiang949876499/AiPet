@@ -1,0 +1,23 @@
+{% extends "_layout.html" %}
+{% set active_nav = "settings" %}
+
+{% block title %}系统监控 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>系统监控</h1>
+    <p>快速检查数据库、授权模式和待处理任务数量。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-body">
+    <dl class="detail-list">
+      {% for key, value in health.items() %}
+      <dt>{{ key }}</dt><dd>{{ value }}</dd>
+      {% endfor %}
+    </dl>
+  </div>
+</section>
+{% endblock %}

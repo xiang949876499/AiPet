@@ -1,0 +1,9 @@
+code: douyin_grooming_process
+channel: douyin
+topic: grooming_process
+title: "Grooming process in 30 seconds"
+body: "Hook: watch {pet_name}'s {service_type} process from start to finish."
+hashtags:
+  - short-video
+  - grooming
+image_prompt: "Vertical short-video storyboard for grooming process."

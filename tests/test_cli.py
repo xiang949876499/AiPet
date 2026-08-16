@@ -93,3 +93,54 @@ def test_cli_creates_internal_push_task_from_seeded_demo_data(tmp_path, monkeypa
 
     assert create_result.exit_code == 0
     assert "已创建内部推送任务" in create_result.output
+
+
+def test_cli_lists_subscription_plans_and_generates_content(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'ops.db'}")
+
+    from main import cli
+
+    runner = CliRunner()
+    assert runner.invoke(cli, ["init-db"]).exit_code == 0
+    assert runner.invoke(cli, ["seed"]).exit_code == 0
+
+    plans_result = runner.invoke(cli, ["subscription", "plans"])
+    assert plans_result.exit_code == 0
+    assert "专业版" in plans_result.output
+    assert "499" in plans_result.output
+
+    content_result = runner.invoke(cli, ["content", "generate"])
+    assert content_result.exit_code == 0
+    assert "今日内容已生成" in content_result.output
+
+    list_result = runner.invoke(cli, ["content", "list"])
+    assert list_result.exit_code == 0
+    assert "今日内容日历" in list_result.output
+    assert "朋友圈" in list_result.output
+
+
+def test_cli_imports_customers_and_prints_7_day_plan(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'phase2.db'}")
+
+    from main import cli
+
+    csv_path = tmp_path / "customers.csv"
+    csv_path.write_text(
+        "客户姓名,手机号,微信名,宠物名,宠物类型,品种,洗护周期天数,最近到店\n"
+        "李老板,13700000000,旺财家长,旺财,狗,泰迪,30,2026-06-01\n",
+        encoding="utf-8",
+    )
+
+    runner = CliRunner()
+    assert runner.invoke(cli, ["init-db"]).exit_code == 0
+    assert runner.invoke(cli, ["seed"]).exit_code == 0
+
+    import_result = runner.invoke(cli, ["customers", "import-csv", "--path", str(csv_path)])
+    assert import_result.exit_code == 0
+    assert "导入客户完成" in import_result.output
+    assert "新增客户 1" in import_result.output
+
+    plan_result = runner.invoke(cli, ["ops", "plan-7-days"])
+    assert plan_result.exit_code == 0
+    assert "7 天运营计划" in plan_result.output
+    assert "朋友圈" in plan_result.output

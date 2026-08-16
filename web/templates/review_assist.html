@@ -1,0 +1,50 @@
+{% extends "_layout.html" %}
+{% set active_nav = "review" %}
+
+{% block title %}点评助手 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>点评助手</h1>
+    <p>生成好评回复、差评安抚和好评引导话术，全部由老板或店员人工复制使用。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>生成回复</h2>
+  </div>
+  <div class="card-body">
+    {% if credit_error %}
+    <div class="empty-state">{{ credit_error }}</div>
+    {% endif %}
+    <form method="post" class="stack">
+      <label>
+        场景
+        <select class="app-search" name="scenario">
+          <option value="positive" {% if scenario == "positive" %}selected{% endif %}>好评回复</option>
+          <option value="negative" {% if scenario == "negative" %}selected{% endif %}>差评回复</option>
+          <option value="guide" {% if scenario == "guide" %}selected{% endif %}>好评引导</option>
+        </select>
+      </label>
+      <label>
+        评价内容
+        <textarea class="app-search" name="review_text" rows="5" placeholder="粘贴客户评价或服务场景">{{ review_text }}</textarea>
+      </label>
+      <button class="btn-primary" type="submit">生成回复</button>
+    </form>
+  </div>
+</section>
+
+{% if reply %}
+<section class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>推荐回复</h2>
+  </div>
+  <div class="card-body">
+    <div class="script-box">{{ reply }}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

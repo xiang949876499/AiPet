@@ -1,0 +1,22 @@
+{% extends "_layout.html" %}
+{% set active_nav = "weekly" %}
+
+{% block title %}每周复盘报告 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>每周复盘报告</h1>
+    <p>把触达、回复、到店和预计挽回收入读成老板能直接行动的下周建议。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>本周经营复盘</h2>
+  </div>
+  <div class="card-body">
+    <div class="script-box">{{ report }}</div>
+  </div>
+</section>
+{% endblock %}

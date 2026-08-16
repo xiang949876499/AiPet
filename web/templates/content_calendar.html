@@ -1,0 +1,66 @@
+{% extends "_layout.html" %}
+{% set active_nav = "content" %}
+
+{% block title %}内容日历 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>内容日历</h1>
+    <p>生成朋友圈、小红书、抖音脚本草稿，发布后记录互动数据。</p>
+  </div>
+  <form method="post" action="/content/generate">
+    <button class="btn-primary" type="submit">生成今日内容</button>
+  </form>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>7 天排期</h2>
+  </div>
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead><tr><th>日期</th><th>渠道</th><th>模板</th><th>状态</th><th>标题</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+        <tr><td>{{ item.date }}</td><td>{{ item.channel }}</td><td>{{ item.template_code }}</td><td>{{ item.status }}</td><td>{{ item.title }}</td></tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-state">暂无排期。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>内容草稿与发布记录</h2>
+  </div>
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead><tr><th>渠道</th><th>标题</th><th>正文</th><th>状态</th><th>发布复盘</th></tr></thead>
+      <tbody>
+        {% for item in content_items %}
+        <tr>
+          <td>{{ item.channel }}</td>
+          <td>{{ item.title }}</td>
+          <td class="wide-cell">{{ item.body }}</td>
+          <td><span class="tag">{{ item.status }}</span></td>
+          <td>
+            <form class="inline-form" method="post" action="/content/{{ item.id }}/publish">
+              <label>赞 <input name="likes" value="0"></label>
+              <label>评 <input name="comments" value="0"></label>
+              <label>转 <input name="shares" value="0"></label>
+              <label>咨询 <input name="consultations" value="0"></label>
+              <button class="btn-primary" type="submit">标记已发布</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-state">暂无内容草稿。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "_layout.html" %}
+{% set active_nav = "settings" %}
+
+{% block title %}触达规则 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>触达规则</h1>
+    <p>查看复购提醒、沉睡唤醒和试用装回访等自动触达策略。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead><tr><th>规则代码</th><th>规则名称</th><th>发送模式</th><th>是否启用</th></tr></thead>
+      <tbody>
+        {% for rule in rules %}
+        <tr>
+          <td>{{ rule.code }}</td>
+          <td>{{ rule.name }}</td>
+          <td>{{ rule.send_mode }}</td>
+          <td><span class="tag {{ 'tag-success' if rule.enabled else 'tag-warning' }}">{{ "启用" if rule.enabled else "停用" }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="empty-state">暂无触达规则。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

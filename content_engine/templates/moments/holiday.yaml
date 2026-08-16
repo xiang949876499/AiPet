@@ -1,0 +1,9 @@
+code: moments_holiday
+channel: moments
+topic: holiday
+title: "Holiday care reminder"
+body: "Holiday slots fill quickly. Reserve care time for {pet_name} early."
+hashtags:
+  - holiday
+  - booking
+image_prompt: "Holiday pet grooming reminder poster."

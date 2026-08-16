@@ -1,0 +1,60 @@
+{% extends "_layout.html" %}
+{% set active_nav = "activity" %}
+
+{% block title %}活动方案生成器 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>活动方案生成器</h1>
+    <p>生成主题、规则、宣传文案和预计效果，适合人工确认后加入内容日历。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>策划活动</h2>
+  </div>
+  <div class="card-body">
+    {% if credit_error %}
+    <div class="empty-state">{{ credit_error }}</div>
+    {% endif %}
+    <form method="post" class="stack">
+      <label>
+        活动类型
+        <select class="app-search" name="activity_type">
+          <option value="老客复购" {% if form.activity_type == "老客复购" %}selected{% endif %}>老客复购</option>
+          <option value="新客引流" {% if form.activity_type == "新客引流" %}selected{% endif %}>新客引流</option>
+          <option value="周中填空" {% if form.activity_type == "周中填空" %}selected{% endif %}>周中填空</option>
+          <option value="储值活动" {% if form.activity_type == "储值活动" %}selected{% endif %}>储值活动</option>
+          <option value="节日活动" {% if form.activity_type == "节日活动" %}selected{% endif %}>节日活动</option>
+        </select>
+      </label>
+      <label>
+        目标客户
+        <input class="app-search" name="target" value="{{ form.target }}" placeholder="45 天未到店洗护客户">
+      </label>
+      <label>
+        优惠力度
+        <input class="app-search" name="offer" value="{{ form.offer }}" placeholder="基础洗护 9 折">
+      </label>
+      <label>
+        活动周期
+        <input class="app-search" name="duration" value="{{ form.duration }}" placeholder="7 天">
+      </label>
+      <button class="btn-primary" type="submit">生成方案</button>
+    </form>
+  </div>
+</section>
+
+{% if plan %}
+<section class="card" style="margin-top:16px;">
+  <div class="card-header">
+    <h2>活动方案</h2>
+  </div>
+  <div class="card-body">
+    <div class="script-box">{{ plan }}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+code: moments_before_after
+channel: moments
+topic: before_after
+title: "{store_name} grooming before and after"
+body: "{pet_name} finished {service_type} on {service_date}. Fresh, clean, and ready for cuddles."
+hashtags:
+  - grooming
+  - before-after
+image_prompt: "Before and after grooming photo layout for {pet_name}."

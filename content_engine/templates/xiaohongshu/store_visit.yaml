@@ -1,0 +1,9 @@
+code: xhs_store_visit
+channel: xiaohongshu
+topic: store_visit
+title: "A day at {store_name}"
+body: "What happens during a gentle {service_type} appointment?"
+hashtags:
+  - store-visit
+  - pet-life
+image_prompt: "Bright store visit collage."

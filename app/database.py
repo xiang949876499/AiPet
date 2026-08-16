@@ -36,10 +36,27 @@ def _ensure_sqlite_schema_compatibility(bind) -> None:
 
     column_patches = {
         "customers": {
+            "dnd_until": "ALTER TABLE customers ADD COLUMN dnd_until DATETIME",
+            "dnd_channels": "ALTER TABLE customers ADD COLUMN dnd_channels TEXT",
+            "dnd_message_types": "ALTER TABLE customers ADD COLUMN dnd_message_types TEXT",
             "external_userid": "ALTER TABLE customers ADD COLUMN external_userid VARCHAR(120)",
             "push_consent_status": (
                 "ALTER TABLE customers ADD COLUMN push_consent_status VARCHAR(40) DEFAULT 'unknown'"
             ),
+        },
+        "pets": {
+            "vaccine_next_date": "ALTER TABLE pets ADD COLUMN vaccine_next_date DATE",
+            "deworming_last_date": "ALTER TABLE pets ADD COLUMN deworming_last_date DATE",
+        },
+        "follow_tasks": {
+            "decision_card": "ALTER TABLE follow_tasks ADD COLUMN decision_card TEXT",
+            "send_mode": "ALTER TABLE follow_tasks ADD COLUMN send_mode VARCHAR(40) DEFAULT 'manual_confirm'",
+        },
+        "content_items": {
+            "hashtags": "ALTER TABLE content_items ADD COLUMN hashtags TEXT",
+            "image_prompt": "ALTER TABLE content_items ADD COLUMN image_prompt TEXT",
+            "scheduled_date": "ALTER TABLE content_items ADD COLUMN scheduled_date DATE",
+            "interaction_data": "ALTER TABLE content_items ADD COLUMN interaction_data TEXT",
         },
         "staff": {
             "wecom_userid": "ALTER TABLE staff ADD COLUMN wecom_userid VARCHAR(120)",

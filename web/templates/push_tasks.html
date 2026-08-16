@@ -1,44 +1,46 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>推送任务 - {{ app_name }}</title>
-  <style>
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; color: #1f2937; }
-    h1 { font-size: 28px; margin-bottom: 16px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 10px; vertical-align: top; }
-    .status { font-weight: 700; }
-    .error { color: #b91c1c; }
-  </style>
-</head>
-<body>
-  <h1>推送任务</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>推送渠道</th>
-        <th>接收人</th>
-        <th>场景</th>
-        <th>内容</th>
-        <th>状态</th>
-        <th>错误信息</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for task in tasks %}
-      <tr>
-        <td>{{ task.id }}</td>
-        <td>{{ task.channel }}</td>
-        <td>{{ task.receiver_id }}</td>
-        <td>{{ task.scene }}</td>
-        <td>{{ task.content }}</td>
-        <td class="status">{{ status_labels.get(task.status, task.status) }}</td>
-        <td class="error">{{ task.error_message or "" }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</body>
-</html>
+{% extends "_layout.html" %}
+{% set active_nav = "outreach" %}
+
+{% block title %}推送任务 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>推送任务</h1>
+    <p>确认、发送或跳过企业微信内部提醒；真实发送需要先开启配置。</p>
+  </div>
+  <a class="btn-secondary" href="/outreach#send">打开统一触达页</a>
+</div>
+
+<section class="card">
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead>
+        <tr><th>ID</th><th>推送渠道</th><th>接收人</th><th>场景</th><th>内容</th><th>状态</th><th>错误信息</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.id }}</td>
+          <td>{{ task.channel }}</td>
+          <td>{{ task.receiver_id }}</td>
+          <td>{{ task.scene }}</td>
+          <td class="wide-cell">{{ task.content }}</td>
+          <td><span class="tag">{{ status_labels.get(task.status, task.status) }}</span></td>
+          <td class="wide-cell">{{ task.error_message or "" }}</td>
+          <td>
+            <div class="button-row">
+              <form method="post" action="/push-tasks/{{ task.id }}/approve"><button class="btn-secondary" type="submit">确认发送</button></form>
+              <form method="post" action="/push-tasks/{{ task.id }}/send"><button class="btn-primary" type="submit">立即发送</button></form>
+              <form method="post" action="/push-tasks/{{ task.id }}/skip"><button class="btn-secondary" type="submit">跳过</button></form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="empty-state">暂无推送任务。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

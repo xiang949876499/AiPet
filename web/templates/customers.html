@@ -1,0 +1,116 @@
+{% extends "_layout.html" %}
+{% set active_nav = "customers" %}
+
+{% block title %}客户管理 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>客户管理</h1>
+    <p>查看门店客户、微信名、宠物和最近到店情况。</p>
+  </div>
+  <a class="btn-primary" href="/customers/import">导入客户 CSV</a>
+</div>
+
+<nav class="tabs" aria-label="客户筛选">
+  {% for key, label in filters.items() %}
+  <a class="tab {% if active_filter == key %}is-active{% endif %}" href="{{ '/customers' if key == 'all' else '/customers?filter=' ~ key }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<p class="muted-line">
+  筛选：{{ filter_label }}
+  {% if global_search %} · 搜索：{{ global_search }}{% endif %}
+  · {{ customers | length }} 位客户
+</p>
+
+{% if batch_error == "no_selection" %}
+<div class="empty-state">请选择至少一位客户后再批量处理。</div>
+{% elif batch_error == "no_pending_tasks" %}
+<div class="empty-state">选中的客户当前没有待处理的跟进任务。</div>
+{% elif batch_error == "no_staff" %}
+<div class="empty-state">还没有绑定企业微信 UserID 的店员，暂时不能生成内部提醒。</div>
+{% elif batch_action == "mark_sent" %}
+<div class="script-box">已批量标记 {{ batch_count }} 条待跟进任务为已发送。</div>
+{% elif batch_action == "push_internal" %}
+<div class="script-box">已生成 {{ batch_count }} 条内部提醒任务，<a href="/outreach#send">查看内部提醒</a>。</div>
+{% endif %}
+
+<form method="post" action="/customers/batch">
+  <input type="hidden" name="return_filter" value="{{ active_filter }}">
+  <section class="card">
+    <div class="card-header batch-toolbar">
+      <span>批量操作</span>
+      <label class="check-label" for="select-all-customers">
+        <input id="select-all-customers" type="checkbox">
+        全选当前页
+      </label>
+      <span class="muted-line" id="selected-count">已选择 0 位客户</span>
+      <button class="btn-secondary" type="submit" name="action" value="push_internal">生成内部提醒</button>
+      <button class="btn-secondary" type="submit" name="action" value="mark_sent">标记已发送</button>
+    </div>
+    <div class="card-body table-wrap">
+      <table class="app-table">
+        <thead>
+          <tr><th>选择</th><th>客户</th><th>手机</th><th>微信</th><th>宠物</th><th>到店次数</th><th>最近到店</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          {% for customer in customers %}
+          <tr>
+            <td><input type="checkbox" name="customer_ids" value="{{ customer.id }}" aria-label="选择 {{ customer.name }}" data-customer-checkbox></td>
+            <td><a href="/customers/{{ customer.id }}">{{ customer.name }}</a></td>
+            <td>{{ customer.phone or "" }}</td>
+            <td>{{ customer.wechat_name or "" }}</td>
+            <td>{{ customer.pet_names | join(", ") }}</td>
+            <td>{{ customer.visit_count }}</td>
+            <td>{{ customer.last_visit_time.strftime("%Y-%m-%d") if customer.last_visit_time else "" }}</td>
+            <td>
+              <div class="tag-row">
+              {% if customer.do_not_disturb %}
+              <span class="tag tag-warning">免打扰</span>
+              {% elif not customer.has_pending_task and not customer.is_due %}
+              <span class="tag">可主动跟进</span>
+              {% endif %}
+              {% if customer.has_pending_task %}
+              <span class="tag tag-warning">待跟进</span>
+              {% endif %}
+              {% if customer.is_due %}
+              <span class="tag tag-danger">已超期</span>
+              {% endif %}
+              </div>
+            </td>
+            <td><a class="btn-secondary" href="/customers/{{ customer.id }}">查看档案</a></td>
+          </tr>
+          {% else %}
+          <tr><td class="empty-state" colspan="9">当前筛选下暂无客户。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const selectAll = document.getElementById("select-all-customers");
+  const selectedCount = document.getElementById("selected-count");
+  const customerCheckboxes = Array.from(document.querySelectorAll("[data-customer-checkbox]"));
+
+  function updateSelectionState() {
+    const checkedCount = customerCheckboxes.filter((checkbox) => checkbox.checked).length;
+    selectedCount.textContent = `已选择 ${checkedCount} 位客户`;
+    selectAll.checked = checkedCount > 0 && checkedCount === customerCheckboxes.length;
+    selectAll.indeterminate = checkedCount > 0 && checkedCount < customerCheckboxes.length;
+  }
+
+  selectAll.addEventListener("change", () => {
+    customerCheckboxes.forEach((checkbox) => {
+      checkbox.checked = selectAll.checked;
+    });
+    updateSelectionState();
+  });
+  customerCheckboxes.forEach((checkbox) => checkbox.addEventListener("change", updateSelectionState));
+  updateSelectionState();
+</script>
+{% endblock %}

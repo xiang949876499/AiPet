@@ -1,0 +1,66 @@
+{% extends "_layout.html" %}
+{% set active_nav = "outreach" %}
+
+{% block title %}复购运营 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>复购运营</h1>
+    <p>查看待跟进任务、生成原因、建议动作和可复制话术。</p>
+  </div>
+  <a class="btn-secondary" href="/outreach">打开统一触达页</a>
+</div>
+
+{% if generated %}
+<div class="script-box">提醒已生成。已根据最新客户数据刷新待跟进任务，可以开始复制话术或生成内部提醒。</div>
+{% endif %}
+
+<section class="card" style="margin-top:16px;">
+  <div class="card-body table-wrap">
+    <table class="app-table">
+      <thead>
+        <tr><th>客户</th><th>宠物</th><th>类型</th><th>优先级</th><th>原因</th><th>建议动作</th><th>话术</th><th>状态</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.customer_name }}</td>
+          <td>{{ task.pet_name }}</td>
+          <td>{{ task.task_type }}</td>
+          <td><span class="tag tag-warning">{{ task.priority }}</span></td>
+          <td>{{ task.reason }}</td>
+          <td>{{ task.suggested_action }}</td>
+          <td class="wide-cell" id="message-{{ task.id }}">{{ task.ai_message or "" }}</td>
+          <td><span class="tag">{{ task.status }}</span></td>
+          <td>
+            <div class="button-row">
+              <button class="btn-secondary" type="button" onclick="copyMessage('message-{{ task.id }}')">复制话术</button>
+              <form method="post" action="/reminders/{{ task.id }}/mark-sent">
+                <button class="btn-primary" type="submit">标记已发送</button>
+              </form>
+              <form method="post" action="/reminders/{{ task.id }}/push-internal">
+                <button class="btn-secondary" type="submit">生成内部提醒</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="empty-state">暂无复购任务。</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function copyMessage(id) {
+    const text = document.getElementById(id).innerText;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+  }
+</script>
+{% endblock %}

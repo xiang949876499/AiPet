@@ -1,0 +1,9 @@
+code: xhs_seasonal_care
+channel: xiaohongshu
+topic: seasonal_care
+title: "Seasonal care checklist"
+body: "This week's care checklist helps {breed} stay comfortable."
+hashtags:
+  - seasonal-care
+  - checklist
+image_prompt: "Seasonal pet care checklist."

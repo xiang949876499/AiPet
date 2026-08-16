@@ -1,0 +1,9 @@
+code: moments_new_product
+channel: moments
+topic: new_product
+title: "New arrival for pet parents"
+body: "Ask the store team which product fits {pet_name}'s daily routine."
+hashtags:
+  - new-arrival
+  - pet-store
+image_prompt: "Pet product shelf display."

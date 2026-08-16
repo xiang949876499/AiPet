@@ -1,0 +1,29 @@
+{% extends "_layout.html" %}
+{% set active_nav = "settings" %}
+
+{% block title %}授权信息 - 宠店 AI 管家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>授权信息</h1>
+    <p>查看当前套餐、本机授权状态和本月 Credit 用量。</p>
+  </div>
+</div>
+
+<section class="card">
+  <div class="card-header">
+    <h2>当前授权</h2>
+  </div>
+  <div class="card-body">
+    <dl class="detail-list">
+      <dt>套餐</dt><dd>{{ subscription.plan_name or local_license.plan_code }}</dd>
+      <dt>状态</dt><dd>{{ subscription.status_label or local_license.mode }}</dd>
+      <dt>Credit 用量</dt><dd>{{ subscription.credit_usage_label or "本月已用 0 / 0 Credit" }}</dd>
+      <dt>剩余 Credit</dt><dd>{{ subscription.credit_remaining or 0 }}</dd>
+      <dt>离线剩余天数</dt><dd>{{ local_license.offline_remaining_days }}</dd>
+      <dt>授权模式</dt><dd>{{ local_license.mode }}</dd>
+    </dl>
+  </div>
+</section>
+{% endblock %}

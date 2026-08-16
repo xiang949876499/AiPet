@@ -1,0 +1,9 @@
+code: douyin_knowledge_talk
+channel: douyin
+topic: knowledge_talk
+title: "One pet care tip"
+body: "One useful tip for {breed} parents in under 20 seconds."
+hashtags:
+  - pet-knowledge
+  - short-tip
+image_prompt: "Vertical talking-head pet care cover."
