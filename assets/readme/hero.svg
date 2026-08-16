@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">AiPet — reviewed pet-store follow-up tasks</title>
+  <desc id="desc">A warm service-desk board showing service records becoming reminder tasks, reviewed messages, internal notifications, and manual customer contact.</desc>
+  <rect width="1200" height="360" rx="28" fill="#f5f0e5"/>
+  <path d="M54 75H1146" stroke="#cbd7cc" stroke-width="2"/>
+  <text x="58" y="64" fill="#16726c" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" letter-spacing="3">PET STORE OPERATIONS / HUMAN IN THE LOOP</text>
+  <text x="58" y="136" fill="#173b3a" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="60" font-weight="700">AiPet</text>
+  <text x="61" y="179" fill="#315856" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="26">把服务周期变成店员可审核的复购待办</text>
+  <text x="61" y="211" fill="#617d78" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif" font-size="21">Turn store records into reviewed follow-ups — never automatic customer blasts.</text>
+  <text x="61" y="258" fill="#d15f4e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18">CRM · REMINDERS · WECom · SAFE FALLBACK</text>
+  <g transform="translate(650 92)" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, Microsoft YaHei, sans-serif">
+    <path d="M102 67H126M236 67H260M370 67H394" stroke="#458985" stroke-width="4" stroke-linecap="round"/>
+    <polygon points="126,67 114,59 114,75" fill="#d15f4e"/><polygon points="260,67 248,59 248,75" fill="#d15f4e"/><polygon points="394,67 382,59 382,75" fill="#d15f4e"/>
+    <rect x="0" y="0" width="102" height="133" rx="18" fill="#e5efdf" stroke="#8eb7aa" stroke-width="2"/>
+    <circle cx="32" cy="34" r="12" fill="#d15f4e"/><circle cx="52" cy="24" r="9" fill="#d15f4e"/><circle cx="52" cy="45" r="9" fill="#d15f4e"/><circle cx="72" cy="34" r="12" fill="#d15f4e"/>
+    <text x="20" y="83" fill="#173b3a" font-size="16" font-weight="700">服务记录</text><text x="15" y="106" fill="#4c706b" font-size="13">service cycle</text>
+    <rect x="126" y="0" width="110" height="133" rx="18" fill="#d8ece5" stroke="#73a99e" stroke-width="2"/>
+    <text x="145" y="52" fill="#173b3a" font-size="16" font-weight="700">提醒任务</text><text x="143" y="78" fill="#4c706b" font-size="13">why now?</text><text x="140" y="103" fill="#d15f4e" font-size="12">wash · trial</text>
+    <rect x="260" y="0" width="110" height="133" rx="18" fill="#fff9ed" stroke="#e1a678" stroke-width="2"/>
+    <text x="279" y="52" fill="#173b3a" font-size="16" font-weight="700">人工审核</text><text x="278" y="78" fill="#4c706b" font-size="13">edit message</text><path d="M294 105l9 9 19-24" fill="none" stroke="#16726c" stroke-width="5" stroke-linecap="round"/>
+    <rect x="394" y="0" width="120" height="133" rx="18" fill="#d8ece5" stroke="#73a99e" stroke-width="2"/>
+    <text x="413" y="52" fill="#173b3a" font-size="16" font-weight="700">内部提醒</text><text x="410" y="78" fill="#4c706b" font-size="13">staff notice</text><text x="410" y="103" fill="#16726c" font-size="12">manual contact</text>
+    <rect x="127" y="160" width="250" height="35" rx="12" fill="#173b3a"/><text x="150" y="183" fill="#f5f0e5" font-size="14">AI drafts; staff decides.</text>
+  </g>
+</svg>
