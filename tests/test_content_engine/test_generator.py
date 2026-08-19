@@ -24,3 +24,22 @@ def test_generate_content_item_falls_back_to_image_prompt(db_session, sample_rec
     assert isinstance(item, ContentItem)
     assert item.image_prompt
     assert item.status == "draft"
+
+
+def test_generate_content_item_uses_ai_copy_optimizer(db_session, sample_records):
+    from content_engine.generator import generate_content_item
+    from core.llm import LLMClient
+
+    llm = LLMClient(
+        generator=lambda prompt: (
+            '{"title": "豆豆洗护焕新前后对比", '
+            '"body": "豆豆这次洗护后清爽了不少，适合发一条温暖的到店案例。", '
+            '"image_prompt": "豆豆洗护前后对比封面"}'
+        )
+    )
+
+    item = generate_content_item(db_session, sample_records["store"].id, "moments_before_after", llm_client=llm)
+
+    assert item.title == "豆豆洗护焕新前后对比"
+    assert item.body == "豆豆这次洗护后清爽了不少，适合发一条温暖的到店案例。"
+    assert item.image_prompt == "豆豆洗护前后对比封面"

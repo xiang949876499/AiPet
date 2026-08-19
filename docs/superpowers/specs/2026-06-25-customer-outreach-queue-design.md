@@ -1,8 +1,16 @@
 # 客户触达队列 — 合并客户机会与客户待办
 
 **日期**: 2026-06-25
-**状态**: 设计中
+**状态**: 已实现
 **分支**: codex/ops-agent-subscription
+
+## 实现结果
+
+- 新增 `build_outreach_queue()`，以 FollowTask 为主合并 customer+pet 机会，缺失任务时自动创建 FollowTask。
+- 新增 `/api/customers/outreach-queue`、`/api/reminders/{task_id}/skip`、`/api/reminders/{task_id}/update-message`。
+- Vue SPA 任务中心已用单个「推荐今日联系的客户」队列替代工作台里的「客户机会」和「待跟进任务」重复列表，支持生成/编辑/复制/标记已发送/跳过。
+- Vue SPA 客户管理页回归全部客户列表与导入流程，客户搜索只在客户管理页内生效。
+- 覆盖测试：`tests/test_services/test_ops_dashboard.py`、`tests/test_web/test_customer_import_page.py`、`tests/test_web/test_reminder_friendly_message.py`、`tests/test_web/test_frontend_split.py`。
 
 ## 问题
 

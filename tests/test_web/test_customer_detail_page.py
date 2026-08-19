@@ -155,6 +155,13 @@ def test_customer_list_batch_creates_internal_push_tasks(tmp_path, monkeypatch):
     from fastapi.testclient import TestClient
     from web.app import create_app
 
+    session = SessionLocal()
+    try:
+        # 演示种子数据已带一条 wang 的内部推送任务，批量推送应在基线上新增一条
+        existing_count = session.query(PushTask).filter_by(receiver_id="wang").count()
+    finally:
+        session.close()
+
     client = TestClient(create_app())
     response = client.post(
         "/customers/batch",
@@ -167,9 +174,14 @@ def test_customer_list_batch_creates_internal_push_tasks(tmp_path, monkeypatch):
 
     session = SessionLocal()
     try:
-        push_tasks = session.query(PushTask).filter_by(receiver_id="wang").all()
-        assert len(push_tasks) == 1
-        assert "客户：" in push_tasks[0].content
+        push_tasks = (
+            session.query(PushTask)
+            .filter_by(receiver_id="wang")
+            .order_by(PushTask.id.asc())
+            .all()
+        )
+        assert len(push_tasks) == existing_count + 1
+        assert "客户：" in push_tasks[-1].content
     finally:
         session.close()
 

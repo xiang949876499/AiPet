@@ -45,7 +45,7 @@ def test_customer_import_template_downloads_csv(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/csv")
     assert "attachment; filename=customers-template.csv" in response.headers["content-disposition"]
-    assert "客户姓名,手机号,微信名,宠物名,宠物类型,品种,洗护周期天数,最近到店" in response.text
+    assert "客户姓名,手机号,微信名,宠物名,宠物类型,品种,到店日期,服务项目,消费金额,备注" in response.text
     assert "张女士,13800000000" in response.text
 
 
@@ -161,3 +161,79 @@ def test_customer_import_can_generate_reminders_after_upload(tmp_path, monkeypat
         )
     finally:
         session.close()
+
+
+def test_customer_import_preview_json_api_reports_summary(tmp_path, monkeypatch):
+    _seed_import_store(tmp_path, monkeypatch)
+
+    from fastapi.testclient import TestClient
+    from web.app import create_app
+
+    client = TestClient(create_app())
+    csv_content = (
+        "客户姓名,手机号,微信名,宠物名,宠物类型,品种,到店日期,服务项目,消费金额,备注\n"
+        "赵老板,13500000000,团团家长,团团,狗,比熊,2026-06-01,洗护,168,\n"
+    ).encode("utf-8-sig")
+
+    response = client.post(
+        "/api/customers/import/preview",
+        files={"csv_file": ("customers.csv", csv_content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_rows"] == 1
+    assert payload["ready_rows"] == 1
+    assert payload["estimated_service_records"] == 1
+    assert payload["estimated_total_amount"] == 168
+
+
+def test_customer_import_json_api_creates_service_records(tmp_path, monkeypatch):
+    _seed_import_store(tmp_path, monkeypatch)
+
+    from app.database import SessionLocal
+    from app.models import Customer, ServiceRecord
+    from fastapi.testclient import TestClient
+    from web.app import create_app
+
+    client = TestClient(create_app())
+    csv_content = (
+        "客户姓名,手机号,微信名,宠物名,宠物类型,品种,到店日期,服务项目,消费金额,备注\n"
+        "孙女士,13600000000,可乐妈妈,可乐,狗,柯基,2026-06-02,商品,88,狗粮\n"
+    ).encode("utf-8-sig")
+
+    response = client.post(
+        "/api/customers/import",
+        files={"csv_file": ("customers.csv", csv_content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["created_customers"] == 1
+    assert payload["created_service_records"] == 1
+
+    session = SessionLocal()
+    try:
+        customer = session.query(Customer).filter_by(phone="13600000000").one()
+        record = session.query(ServiceRecord).filter_by(customer_id=customer.id).one()
+        assert record.service_type == "商品"
+        assert float(record.amount) == 88
+    finally:
+        session.close()
+
+
+def test_customer_outreach_queue_api_returns_items(tmp_path, monkeypatch):
+    _seed_import_store(tmp_path, monkeypatch)
+
+    from fastapi.testclient import TestClient
+    from web.app import create_app
+
+    client = TestClient(create_app())
+    response = client.get("/api/customers/outreach-queue")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert {"items", "counts"} <= payload.keys()
+    assert payload["counts"]["total"] == len(payload["items"])
+    assert payload["items"]
+    assert {"id", "customer_id", "pet_id", "ai_message", "status"} <= payload["items"][0].keys()

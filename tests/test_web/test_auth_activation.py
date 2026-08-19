@@ -95,9 +95,12 @@ def test_activate_page_starts_trial_and_unlocks_dashboard(tmp_path, monkeypatch)
     monkeypatch.setenv("AIPET_REQUIRE_LICENSE", "true")
     monkeypatch.setenv("AIPET_LICENSE_FILE", str(tmp_path / "license.json"))
 
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # 本地存在 Vue 构建时 "/" 返回 SPA 外壳；这里验证 Jinja 回退工作台
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
     response = client.post("/activate/trial", follow_redirects=False)
 
     assert response.status_code == 303
@@ -140,7 +143,10 @@ def test_dashboard_includes_first_run_guide(tmp_path, monkeypatch):
 
     from app.database import SessionLocal, init_db
     from seed_data import seed_demo_data
-    from web.app import create_app
+    import web.app as web_app
+
+    # 前端拆分为 Vue SPA 后，引导文案在 Jinja 回退模板中；强制走回退路径
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
 
     init_db()
     session = SessionLocal()
@@ -149,7 +155,7 @@ def test_dashboard_includes_first_run_guide(tmp_path, monkeypatch):
     finally:
         session.close()
 
-    client = TestClient(create_app())
+    client = TestClient(web_app.create_app())
     response = client.get("/")
 
     assert response.status_code == 200

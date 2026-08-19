@@ -1,9 +1,9 @@
 code: moments_customer_review
 channel: moments
 topic: customer_review
-title: "Thank you, {customer_name}"
-body: "We are happy {pet_name} enjoyed the latest visit."
+title: "谢谢{customer_name}对{store_name}的信任"
+body: "很开心{pet_name}这次到店体验顺利，也感谢家长把日常护理放心交给我们。"
 hashtags:
-  - review
-  - store-life
-image_prompt: "Friendly customer review social post."
+  - 客户好评
+  - 门店日常
+image_prompt: "温暖的客户评价朋友圈配图，包含宠物和门店服务氛围。"

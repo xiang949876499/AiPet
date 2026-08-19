@@ -6,15 +6,17 @@ import secrets
 import tempfile
 import uuid
 from datetime import datetime
+from pathlib import Path
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.requests import ClientDisconnect
 
 from agents.content import ContentAgent
-from agents.growth import ActivityPlanAgent, AdvisorAgent, StoreAuditAgent, WeeklyReportAgent
+from agents.growth import AdvisorAgent, StoreAuditAgent, WeeklyReportAgent
 from agents.reminder import ReminderAgent
 from agents.review import ReviewAgent
 from app.config import settings
@@ -34,6 +36,8 @@ from app.models import (
 )
 from analytics.dashboard import build_tiered_dashboard
 from content_engine.calendar import build_content_calendar
+from content_engine.generator import auto_fill_variables, load_template, optimize_rendered_copy, render_template
+from core.llm import LLMClient
 from core.wecom_client import WeComClient
 from licensing.client import LicenseClient
 from licensing.middleware import LicenseMiddleware
@@ -42,16 +46,18 @@ from outreach.confirm_flow import confirm_message, get_pending_confirmations, re
 from outreach.engine import dispatch_outreach
 from outreach.rules import _ensure_default_rules
 from services.customer_import import CUSTOMER_IMPORT_TEMPLATE, import_customers_from_csv, preview_customers_from_csv
-from services.credits import consume_credit_task
+from services.credits import consume_credit_task, credit_cost
 from services.ops_dashboard import build_customer_opportunities, build_ops_metrics, build_subscription_snapshot
-from services.subscriptions import ensure_store_subscription
+from services.subscriptions import ensure_store_subscription, refresh_subscription_status
 from services.push_tasks import create_internal_push_task
 from services.weekly_plan import build_7_day_ops_plan
 from services.wecom_push import send_push_task
 from services.wecom_oauth import bind_wecom_staff
-from web.routes import appointments, customers, reminders, samples
+from web.routes import advisor, appointments, customers, reminders, samples, workbench
 
 templates = Jinja2Templates(directory="web/templates")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
 
 AUTH_EXEMPT_PATHS = {
     "/login",
@@ -62,6 +68,35 @@ AUTH_EXEMPT_PATHS = {
     "/docs/oauth2-redirect",
     "/redoc",
 }
+
+ACTIVITY_PLATFORMS = {
+    "抖音": [
+        {"name": "改造前后", "template_code": "douyin_before_after"},
+        {"name": "洗护过程", "template_code": "douyin_grooming_process"},
+        {"name": "知识科普", "template_code": "douyin_knowledge_talk"},
+        {"name": "宠物日常", "template_code": "douyin_pet_daily"},
+        {"name": "产品开箱", "template_code": "douyin_product_unboxing"},
+    ],
+    "小红书": [
+        {"name": "品种护理", "template_code": "xhs_breed_care"},
+        {"name": "避坑指南", "template_code": "xhs_pitfall_guide"},
+        {"name": "产品测评", "template_code": "xhs_product_review"},
+        {"name": "季节性护理", "template_code": "xhs_seasonal_care"},
+        {"name": "到店体验", "template_code": "xhs_store_visit"},
+    ],
+    "朋友圈": [
+        {"name": "改造前后", "template_code": "moments_before_after"},
+        {"name": "客户好评", "template_code": "moments_customer_review"},
+        {"name": "节日问候", "template_code": "moments_holiday"},
+        {"name": "新品预告", "template_code": "moments_new_product"},
+        {"name": "宠物知识", "template_code": "moments_pet_knowledge"},
+    ],
+}
+
+ACTIVITY_CREDIT_ERROR = "本月额度已用完，请升级套餐"
+ACTIVITY_IMAGE_ERROR = "图片生成服务暂不可用，请先使用海报卡片模式"
+ACTIVITY_IMAGE_MODEL = os.getenv("AIPET_IMAGE_MODEL", "dall-e-3")
+ACTIVITY_IMAGE_SIZE = os.getenv("AIPET_IMAGE_SIZE", "1024x1024")
 
 
 def _env_value(name: str, fallback: str = "") -> str:
@@ -98,7 +133,20 @@ def _license_client() -> LicenseClient:
 
 
 def _is_auth_exempt(path: str) -> bool:
-    return path in AUTH_EXEMPT_PATHS or path.startswith("/static") or path.startswith("/activate")
+    return (
+        path in AUTH_EXEMPT_PATHS
+        or path.startswith("/static")
+        or path.startswith("/assets")
+        or path.startswith("/activate")
+    )
+
+
+def _frontend_index_path() -> Path:
+    return FRONTEND_DIST_DIR / "index.html"
+
+
+def _frontend_build_available() -> bool:
+    return _frontend_index_path().is_file()
 
 
 def _form_int(value) -> int:
@@ -106,6 +154,107 @@ def _form_int(value) -> int:
         return max(int(value or 0), 0)
     except (TypeError, ValueError):
         return 0
+
+
+def _activity_template_code(platform_name: str, direction_name: str) -> str:
+    for direction in ACTIVITY_PLATFORMS.get(platform_name, []):
+        if direction["name"] == direction_name:
+            return direction["template_code"]
+    raise HTTPException(status_code=400, detail="invalid_activity_direction")
+
+
+def _render_activity_copy(session, store_id: int, template_code: str, context: str = "") -> dict:
+    template = load_template(template_code)
+    variables = auto_fill_variables(template_code, store_id, session)
+    if context:
+        variables["service_type"] = f"{variables.get('service_type', '护理')}；补充说明：{context}"
+    rendered = render_template(template, variables)
+    optimized = optimize_rendered_copy(rendered, variables, LLMClient())
+    return {
+        "title": optimized["title"],
+        "body": optimized["body"],
+        "channel": template.get("channel", ""),
+    }
+
+
+def _activity_payload_value(payload: dict, name: str) -> str:
+    return str(payload.get(name, "") or "").strip()
+
+
+def _activity_image_api_key() -> str:
+    env_key = os.getenv("OPENAI_API_KEY", "").strip()
+    return settings.openai_api_key.strip() or env_key
+
+
+def _activity_image_client_kwargs() -> dict:
+    api_key = _activity_image_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail=ACTIVITY_IMAGE_ERROR)
+    client_kwargs = {"api_key": api_key}
+    if settings.openai_base_url.strip():
+        client_kwargs["base_url"] = settings.openai_base_url.strip().rstrip("/")
+    if settings.llm_timeout_seconds and settings.llm_timeout_seconds > 0:
+        client_kwargs["timeout"] = float(settings.llm_timeout_seconds)
+    return client_kwargs
+
+
+def _activity_image_prompt(title: str, body: str) -> str:
+    fallback = (
+        "Warm, modern pet store marketing photo poster, clean composition, "
+        f"happy pets and caring groomer, headline: {title[:80]}, context: {body[:220]}"
+    )
+    compressed = LLMClient().generate(
+        "把下面宠物门店营销文案压缩成适合图片生成模型的提示词。"
+        "要求：只输出一段提示词，包含画面主体、风格、构图和氛围，不要解释。\n\n"
+        f"标题：{title}\n正文：{body}"
+    )
+    prompt = str(compressed or "").strip().strip('"')
+    return (prompt or fallback)[:900]
+
+
+def _activity_image_value(data_point, name: str) -> str:
+    if isinstance(data_point, dict):
+        return str(data_point.get(name, "") or "")
+    return str(getattr(data_point, name, "") or "")
+
+
+def _generate_activity_ai_image(title: str, body: str) -> dict:
+    try:
+        from openai import OpenAI
+    except Exception:
+        raise HTTPException(status_code=503, detail=ACTIVITY_IMAGE_ERROR)
+
+    prompt = _activity_image_prompt(title, body)
+    try:
+        client = OpenAI(**_activity_image_client_kwargs())
+        response = client.images.generate(
+            model=ACTIVITY_IMAGE_MODEL,
+            prompt=prompt,
+            size=ACTIVITY_IMAGE_SIZE,
+            n=1,
+        )
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail=ACTIVITY_IMAGE_ERROR)
+
+    data = response.data[0] if getattr(response, "data", None) else None
+    if data is None:
+        raise HTTPException(status_code=503, detail=ACTIVITY_IMAGE_ERROR)
+    url = _activity_image_value(data, "url")
+    b64_json = _activity_image_value(data, "b64_json")
+    if not url and b64_json:
+        url = f"data:image/png;base64,{b64_json}"
+    if not url:
+        raise HTTPException(status_code=503, detail=ACTIVITY_IMAGE_ERROR)
+    return {"url": url, "format": "png"}
+
+
+def _ensure_activity_image_credit_available(session, store_id: int) -> None:
+    subscription = ensure_store_subscription(session, store_id)
+    refresh_subscription_status(subscription)
+    if subscription.status == "trial_expired" or subscription.remaining_ai_quota < credit_cost("activity_image"):
+        raise HTTPException(status_code=402, detail=ACTIVITY_CREDIT_ERROR)
 
 
 def _import_result_from_query(request: Request) -> dict | None:
@@ -145,11 +294,16 @@ def _form_int_list(form, field_name: str) -> list[int]:
 def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
     app = FastAPI(title="宠物店 AI 复购提醒助手")
     app.mount("/static", StaticFiles(directory="web/static"), name="static")
+    frontend_assets_dir = FRONTEND_DIST_DIR / "assets"
+    if frontend_assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(frontend_assets_dir)), name="frontend_assets")
     app.add_middleware(LicenseMiddleware)
     app.include_router(customers.router, prefix="/api/customers", tags=["customers"])
     app.include_router(appointments.router, prefix="/api/appointments", tags=["appointments"])
     app.include_router(reminders.router, prefix="/api/reminders", tags=["reminders"])
     app.include_router(samples.router, prefix="/api/samples", tags=["samples"])
+    app.include_router(workbench.router, prefix="/api/workbench", tags=["workbench"])
+    app.include_router(advisor.router, prefix="/api/advisor", tags=["advisor"])
 
     @app.middleware("http")
     async def local_auth_guard(request: Request, call_next):
@@ -254,6 +408,9 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard(request: Request):
+        if _frontend_build_available():
+            return FileResponse(_frontend_index_path())
+
         init_db()
         session = SessionLocal()
         try:
@@ -1069,38 +1226,109 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
 
     @app.get("/activity", response_class=HTMLResponse)
     def activity_page(request: Request):
-        return templates.TemplateResponse(
-            request,
-            "activity.html",
-            {"app_name": "活动方案生成器", "form": {}, "plan": ""},
-        )
-
-    @app.post("/activity", response_class=HTMLResponse)
-    async def activity_generate(request: Request):
-        form = await request.form()
-        payload = {
-            "activity_type": str(form.get("activity_type", "")).strip(),
-            "target": str(form.get("target", "")).strip(),
-            "offer": str(form.get("offer", "")).strip(),
-            "duration": str(form.get("duration", "")).strip(),
-        }
         init_db()
         session = SessionLocal()
         try:
             store = session.query(Store).order_by(Store.id.asc()).first()
-            if store and not consume_credit_task(session, store.id, "activity_plan"):
-                return templates.TemplateResponse(
-                    request,
-                    "activity.html",
-                    {"app_name": "活动方案生成器", "form": payload, "plan": "", "credit_error": "Credit 余额不足，暂时不能生成活动方案。"},
-                    status_code=402,
-                )
-            result = ActivityPlanAgent(session).execute(payload)
-            return templates.TemplateResponse(
-                request,
-                "activity.html",
-                {"app_name": "活动方案生成器", "form": payload, "plan": result["plan"], "credit_error": ""},
+            store_name = store.name if store else "宠物门店"
+        finally:
+            session.close()
+        return templates.TemplateResponse(
+            request,
+            "activity.html",
+            {"app_name": "营销文案生成器", "activity_platforms": ACTIVITY_PLATFORMS, "store_name": store_name},
+        )
+
+    @app.post("/api/activity/generate")
+    async def activity_generate_api(request: Request):
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="invalid_json")
+
+        platform_name = _activity_payload_value(payload, "platform")
+        direction_name = _activity_payload_value(payload, "direction")
+        context = _activity_payload_value(payload, "context")
+        template_code = _activity_template_code(platform_name, direction_name)
+
+        init_db()
+        session = SessionLocal()
+        try:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            if store is None:
+                raise HTTPException(status_code=400, detail="store_not_found")
+            if not consume_credit_task(session, store.id, "activity_plan"):
+                raise HTTPException(status_code=402, detail=ACTIVITY_CREDIT_ERROR)
+            return _render_activity_copy(session, store.id, template_code, context)
+        finally:
+            session.close()
+
+    @app.post("/api/activity/generate-image")
+    async def activity_generate_image_api(request: Request):
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="invalid_json")
+
+        title = _activity_payload_value(payload, "title")
+        body = _activity_payload_value(payload, "body")
+        mode = _activity_payload_value(payload, "mode") or "ai_image"
+        if mode != "ai_image":
+            raise HTTPException(status_code=400, detail="poster_mode_is_frontend_only")
+        if not title or not body:
+            raise HTTPException(status_code=400, detail="missing_content")
+
+        _activity_image_client_kwargs()
+
+        init_db()
+        session = SessionLocal()
+        try:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            if store is None:
+                raise HTTPException(status_code=400, detail="store_not_found")
+            _ensure_activity_image_credit_available(session, store.id)
+            image = _generate_activity_ai_image(title, body)
+            if not consume_credit_task(session, store.id, "activity_image"):
+                raise HTTPException(status_code=402, detail=ACTIVITY_CREDIT_ERROR)
+            return image
+        finally:
+            session.close()
+
+    @app.post("/api/activity/publish")
+    async def activity_publish_api(request: Request):
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="invalid_json")
+
+        title = _activity_payload_value(payload, "title")
+        body = _activity_payload_value(payload, "body")
+        channel = _activity_payload_value(payload, "channel")
+        direction = _activity_payload_value(payload, "direction") or "营销文案"
+        if not title or not body or not channel:
+            raise HTTPException(status_code=400, detail="missing_content")
+
+        init_db()
+        session = SessionLocal()
+        try:
+            store = session.query(Store).order_by(Store.id.asc()).first()
+            if store is None:
+                raise HTTPException(status_code=400, detail="store_not_found")
+            item = ContentItem(
+                store_id=store.id,
+                channel=channel,
+                topic=direction,
+                title=title,
+                body=body,
+                hashtags="",
+                image_prompt="",
+                interaction_data=json.dumps({"likes": 0, "comments": 0, "shares": 0, "consultations": 0}),
+                status="已发布",
+                published_at=datetime.utcnow(),
             )
+            session.add(item)
+            session.commit()
+            return {"id": item.id, "status": item.status}
         finally:
             session.close()
 
@@ -1173,7 +1401,10 @@ def create_app(wecom_client_factory=_create_wecom_client) -> FastAPI:
 
     @app.post("/review", response_class=HTMLResponse)
     async def review_assist_generate(request: Request):
-        form = await request.form()
+        try:
+            form = await request.form()
+        except ClientDisconnect:
+            return Response(status_code=204)
         scenario = str(form.get("scenario", "positive"))
         review_text = str(form.get("review_text", "")).strip()
         init_db()

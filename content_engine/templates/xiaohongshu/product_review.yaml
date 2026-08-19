@@ -1,9 +1,9 @@
 code: xhs_product_review
 channel: xiaohongshu
 topic: product_review
-title: "Product notes from the store"
-body: "How to choose daily products for {pet_name}'s routine."
+title: "{pet_name}日常用品怎么选？门店实测笔记"
+body: "结合{pet_name}的日常习惯，整理宠物用品挑选思路，帮助家长少踩坑。"
 hashtags:
-  - product-review
-  - pet-products
-image_prompt: "Clean product review layout."
+  - 宠物用品
+  - 门店测评
+image_prompt: "清爽的小红书宠物用品测评封面，突出产品和使用建议。"

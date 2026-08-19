@@ -31,11 +31,12 @@ def init_db_command():
 
 
 @cli.command("seed")
-def seed_command():
+@click.option("--refresh", is_flag=True, help="Refresh the built-in demo store data before seeding.")
+def seed_command(refresh: bool):
     init_db()
     session = SessionLocal()
     try:
-        result = seed_demo_data(session)
+        result = seed_demo_data(session, refresh=refresh)
         console.print(f"演示数据已导入：{result['created']} 条客户记录")
     finally:
         session.close()

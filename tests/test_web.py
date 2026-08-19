@@ -3,8 +3,11 @@ def test_web_dashboard_renders_seeded_metrics(tmp_path, monkeypatch):
 
     from app.database import init_db, SessionLocal
     from seed_data import seed_demo_data
-    from web.app import create_app
+    import web.app as web_app
     from fastapi.testclient import TestClient
+
+    # "/" 在存在 Vue 构建时返回 SPA 外壳；此处验证 Jinja 回退工作台
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
 
     init_db()
     session = SessionLocal()
@@ -13,7 +16,7 @@ def test_web_dashboard_renders_seeded_metrics(tmp_path, monkeypatch):
     finally:
         session.close()
 
-    client = TestClient(create_app())
+    client = TestClient(web_app.create_app())
     response = client.get("/")
 
     assert response.status_code == 200

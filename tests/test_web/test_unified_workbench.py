@@ -48,9 +48,12 @@ def test_workbench_navigation_points_to_unified_outreach(tmp_path, monkeypatch):
     _seed_unified_workbench(tmp_path, monkeypatch)
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # "/" 在存在 Vue 构建时返回 SPA 外壳；导航断言针对 Jinja 回退模板
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
 
     response = client.get("/")
 
@@ -65,9 +68,12 @@ def test_global_shell_exposes_secondary_workflow_shortcuts(tmp_path, monkeypatch
     _seed_unified_workbench(tmp_path, monkeypatch)
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # "/" 在存在 Vue 构建时返回 SPA 外壳；导航断言针对 Jinja 回退模板
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
     response = client.get("/")
 
     assert response.status_code == 200

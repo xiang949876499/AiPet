@@ -1,9 +1,9 @@
 code: moments_new_product
 channel: moments
 topic: new_product
-title: "New arrival for pet parents"
-body: "Ask the store team which product fits {pet_name}'s daily routine."
+title: "{pet_name}家长可以关注的到店新品"
+body: "到店新品已上架，家长可以让店员结合{pet_name}的日常习惯推荐更合适的选择。"
 hashtags:
-  - new-arrival
-  - pet-store
-image_prompt: "Pet product shelf display."
+  - 门店新品
+  - 宠物用品
+image_prompt: "宠物用品货架新品展示图，适合朋友圈发布。"

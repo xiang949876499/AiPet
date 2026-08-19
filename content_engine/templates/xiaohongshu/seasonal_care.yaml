@@ -1,9 +1,9 @@
 code: xhs_seasonal_care
 channel: xiaohongshu
 topic: seasonal_care
-title: "Seasonal care checklist"
-body: "This week's care checklist helps {breed} stay comfortable."
+title: "{breed}本季护理清单"
+body: "整理一份本周护理清单，帮助{breed}在换季时保持更舒适的状态。"
 hashtags:
-  - seasonal-care
-  - checklist
-image_prompt: "Seasonal pet care checklist."
+  - 换季护理
+  - 宠物清单
+image_prompt: "小红书风格换季宠物护理清单封面，排版清晰。"

@@ -8,6 +8,7 @@ CREDIT_COSTS = {
     "xiaohongshu_copy": 2,
     "douyin_script": 3,
     "activity_plan": 5,
+    "activity_image": 3,
     "dormant_recall_batch": 5,
     "seven_day_plan": 10,
     "store_audit": 20,

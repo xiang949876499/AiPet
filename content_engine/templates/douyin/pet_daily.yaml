@@ -1,9 +1,9 @@
 code: douyin_pet_daily
 channel: douyin
 topic: pet_daily
-title: "Store daily with {pet_name}"
-body: "A quick, warm daily clip from {store_name}."
+title: "{pet_name}在{store_name}的温暖日常"
+body: "记录{pet_name}在店里的轻松瞬间，让账号更有人情味，也让家长更放心。"
 hashtags:
-  - pet-daily
-  - store-life
-image_prompt: "Vertical pet daily short video cover."
+  - 宠物日常
+  - 门店生活
+image_prompt: "竖版宠物门店日常短视频封面，氛围温暖自然。"

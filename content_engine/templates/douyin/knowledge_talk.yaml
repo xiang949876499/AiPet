@@ -1,9 +1,9 @@
 code: douyin_knowledge_talk
 channel: douyin
 topic: knowledge_talk
-title: "One pet care tip"
-body: "One useful tip for {breed} parents in under 20 seconds."
+title: "{breed}家长都能用上的养护小知识"
+body: "用 20 秒讲清一个{breed}日常养护要点，简单、实用、不制造焦虑。"
 hashtags:
-  - pet-knowledge
-  - short-tip
-image_prompt: "Vertical talking-head pet care cover."
+  - 宠物养护
+  - 短视频知识
+image_prompt: "竖版宠物养护知识口播封面，适合门店账号发布。"

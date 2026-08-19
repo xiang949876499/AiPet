@@ -1,9 +1,9 @@
 code: moments_pet_knowledge
 channel: moments
 topic: pet_knowledge
-title: "Pet care tip from {store_name}"
-body: "A small weekly care habit keeps {breed} coats easier to maintain."
+title: "{store_name}本周宠物养护小贴士"
+body: "一个简单的每周护理习惯，可以让{breed}的毛发状态更好维护。"
 hashtags:
-  - pet-care
-  - knowledge
-image_prompt: "Warm pet care education card."
+  - 宠物养护
+  - 门店科普
+image_prompt: "温暖风格宠物养护知识卡片，文字简洁清晰。"

@@ -21,9 +21,12 @@ def test_credit_usage_is_visible_on_dashboard_and_license_page(tmp_path, monkeyp
     _seed_credit_web(tmp_path, monkeypatch)
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # 本地存在 Vue 构建时 "/" 返回 SPA 外壳；Credit 用量在 Jinja 回退模板与 /license 中验证
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
 
     dashboard = client.get("/")
     license_page = client.get("/license")
@@ -44,9 +47,15 @@ def test_growth_actions_consume_credit(tmp_path, monkeypatch):
     from app.database import SessionLocal
     from app.models import StoreSubscription
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    class FakeLLMClient:
+        def generate(self, prompt: str):
+            return '{"title": "老客洗护提醒", "body": "适合发布一条轻量营销文案。", "image_prompt": ""}'
+
+    monkeypatch.setattr(web_app, "LLMClient", FakeLLMClient)
+
+    client = TestClient(web_app.create_app())
 
     session = SessionLocal()
     try:
@@ -56,8 +65,8 @@ def test_growth_actions_consume_credit(tmp_path, monkeypatch):
 
     assert client.post("/review", data={"scenario": "positive", "review_text": "洗得很干净"}).status_code == 200
     assert client.post(
-        "/activity",
-        data={"activity_type": "老客复购", "target": "45 天未到店", "offer": "9 折", "duration": "7 天"},
+        "/api/activity/generate",
+        json={"platform": "抖音", "direction": "改造前后", "context": "45 天未到店，9 折"},
     ).status_code == 200
     assert client.post(
         "/audit",

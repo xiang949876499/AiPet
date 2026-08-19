@@ -51,4 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  document.querySelectorAll("form[data-submit-once]").forEach((form) => {
+    form.addEventListener("submit", () => {
+      form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((control) => {
+        control.disabled = true;
+      });
+    });
+  });
 });

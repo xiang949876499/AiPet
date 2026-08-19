@@ -33,9 +33,60 @@ def test_customer_segments_and_opportunities_prioritize_due_and_dormant_customer
     opportunities = build_customer_opportunities(db_session, store.id)
 
     assert opportunities[0]["customer_name"] == "陈姐"
+    assert opportunities[0]["customer_id"] == dormant.id
+    assert opportunities[0]["pet_id"] == dormant_pet.id
     assert opportunities[0]["segment"] == "沉睡客户"
     assert opportunities[0]["suggested_action"] == "发送沉睡唤醒关怀"
     assert any(item["segment"] == "洗护到期" for item in opportunities)
+
+
+def test_outreach_queue_merges_follow_tasks_and_opportunities(db_session, sample_records):
+    from app.models import FollowTask
+    from services.ops_dashboard import build_outreach_queue
+
+    store = sample_records["store"]
+    customer = sample_records["customer"]
+    pet = sample_records["pet"]
+    db_session.add(
+        FollowTask(
+            store_id=store.id,
+            customer_id=customer.id,
+            pet_id=pet.id,
+            task_type="洗护提醒",
+            priority="高",
+            reason="已有任务优先",
+            suggested_action="发送预约提醒",
+            status="待处理",
+            ai_message="张姐，豆豆该洗护啦。",
+        )
+    )
+    db_session.commit()
+
+    queue = build_outreach_queue(db_session, store.id)
+
+    assert queue["counts"]["total"] == 1
+    assert queue["counts"]["ready_to_send"] == 1
+    assert queue["items"][0]["reason"] == "已有任务优先"
+    assert db_session.query(FollowTask).filter_by(customer_id=customer.id, pet_id=pet.id).count() == 1
+
+
+def test_outreach_queue_creates_follow_task_for_opportunity(db_session, sample_records):
+    from app.models import FollowTask
+    from services.ops_dashboard import build_outreach_queue
+
+    store = sample_records["store"]
+    customer = sample_records["customer"]
+    pet = sample_records["pet"]
+
+    assert db_session.query(FollowTask).filter_by(customer_id=customer.id, pet_id=pet.id).count() == 0
+
+    queue = build_outreach_queue(db_session, store.id)
+
+    created = db_session.query(FollowTask).filter_by(customer_id=customer.id, pet_id=pet.id).one()
+    assert created.status == "待处理"
+    assert created.ai_message
+    assert queue["items"][0]["id"] == created.id
+    assert queue["items"][0]["customer_name"] == customer.name
 
 
 def test_ops_metrics_count_touch_tasks_content_and_estimated_revenue(db_session, sample_records):

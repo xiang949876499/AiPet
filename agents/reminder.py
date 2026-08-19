@@ -4,12 +4,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import Customer, FollowTask, Pet, ServiceRecord
-from core.prompt_templates import fallback_message
+from core.llm import LLMClient
+from core.prompt_templates import fallback_message, render_washing_reminder
 
 
 class ReminderAgent:
-    def __init__(self, db_session: Session):
+    def __init__(self, db_session: Session, llm: LLMClient | None = None):
         self.db_session = db_session
+        self.llm = llm or LLMClient()
 
     def execute(self, context: dict) -> dict:
         store_id = context.get("store_id")
@@ -53,6 +55,8 @@ class ReminderAgent:
 
             priority = "高" if days_since >= pet.care_cycle_days + 3 else "中"
             reason = f"{pet.name}上次洗护距今 {days_since} 天，最近 7 天没有预约"
+            fallback = fallback_message("洗护提醒", customer.name, pet.name)
+            ai_message = self._generate_washing_message(customer, pet, record, days_since) or fallback
             task = FollowTask(
                 store_id=record.store_id,
                 customer_id=customer.id,
@@ -62,10 +66,35 @@ class ReminderAgent:
                 reason=reason,
                 suggested_action="发送温和预约提醒",
                 due_date=now,
-                ai_message=fallback_message("洗护提醒", customer.name, pet.name),
+                ai_message=ai_message,
             )
             self.db_session.add(task)
             created += 1
 
         self.db_session.commit()
         return {"created": created}
+
+    def _generate_washing_message(self, customer: Customer, pet: Pet, record: ServiceRecord, days_since: int) -> str | None:
+        prompt = render_washing_reminder(
+            customer_name=customer.name,
+            pet_name=pet.name,
+            pet_type=pet.pet_type,
+            last_service_days=days_since,
+            note=record.note or "",
+        )
+        generated = self.llm.generate(prompt) if self.llm is not None else None
+        return _pick_direct_message(generated)
+
+
+def _pick_direct_message(text: str | None) -> str | None:
+    if not text:
+        return None
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        return None
+    preferred = next((line for line in lines if line.startswith("温和版")), lines[0])
+    for sep in ("：", ":"):
+        if sep in preferred:
+            preferred = preferred.split(sep, 1)[1].strip()
+            break
+    return preferred or None

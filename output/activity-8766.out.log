@@ -1,0 +1,35 @@
+INFO:     127.0.0.1:3304 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5483 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5483 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5404 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10612 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:10612 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3694 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12247 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12247 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:7772 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4819 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4819 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2833 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2833 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:2833 - "POST /api/activity/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11100 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11100 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12793 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12793 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:3461 - "POST /api/activity/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5695 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5695 - "GET /static/app.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13991 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13991 - "GET /activity HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5695 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:12414 - "POST /api/activity/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4783 - "GET /review HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4273 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4273 - "GET /assets/index-sHchnJP4.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8687 - "GET /assets/index-DZENk_9V.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:8687 - "GET /api/workbench HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1443 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1443 - "GET /assets/index-sHchnJP4.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14742 - "GET /assets/index-DZENk_9V.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14742 - "GET /api/workbench HTTP/1.1" 200 OK

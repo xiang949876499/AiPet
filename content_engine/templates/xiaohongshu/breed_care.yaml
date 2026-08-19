@@ -1,9 +1,9 @@
 code: xhs_breed_care
 channel: xiaohongshu
 topic: breed_care
-title: "{breed} care notes"
-body: "Three practical care notes for {breed} parents, based on recent store visits."
+title: "{breed}家长收藏这 3 个护理重点"
+body: "结合近期到店情况，整理 3 个{breed}日常护理重点，适合家长收藏参考。"
 hashtags:
-  - breed-care
-  - pet-notes
-image_prompt: "Xiaohongshu style breed care guide."
+  - 品种护理
+  - 宠物笔记
+image_prompt: "小红书风格品种护理指南封面，清爽、有重点。"

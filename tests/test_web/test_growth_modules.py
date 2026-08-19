@@ -42,32 +42,35 @@ def test_store_audit_page_generates_manual_report(tmp_path, monkeypatch):
     assert "医疗诊断" not in response.text
 
 
-def test_activity_generator_outputs_campaign_plan(tmp_path, monkeypatch):
+def test_activity_generator_outputs_marketing_copy(tmp_path, monkeypatch):
     _seed_store(tmp_path, monkeypatch, "activity.db")
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    class FakeLLMClient:
+        def generate(self, prompt: str):
+            return '{"title": "豆豆焕新日记", "body": "今天适合发布一条温暖的洗护前后对比。", "image_prompt": ""}'
+
+    monkeypatch.setattr(web_app, "LLMClient", FakeLLMClient)
+
+    client = TestClient(web_app.create_app())
 
     page = client.get("/activity")
     assert page.status_code == 200
-    assert "活动方案生成器" in page.text
+    assert "营销文案生成器" in page.text
 
     response = client.post(
-        "/activity",
-        data={
-            "activity_type": "老客复购",
-            "target": "45 天未到店洗护客户",
-            "offer": "基础洗护 9 折",
-            "duration": "7 天",
-        },
+        "/api/activity/generate",
+        json={"platform": "抖音", "direction": "改造前后", "context": "基础洗护 9 折"},
     )
 
     assert response.status_code == 200
-    assert "活动主题" in response.text
-    assert "宣传文案" in response.text
-    assert "预计效果" in response.text
+    assert response.json() == {
+        "title": "豆豆焕新日记",
+        "body": "今天适合发布一条温暖的洗护前后对比。",
+        "channel": "douyin",
+    }
 
 
 def test_weekly_report_reads_operating_data(tmp_path, monkeypatch):

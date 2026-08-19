@@ -1,9 +1,9 @@
 code: douyin_before_after
 channel: douyin
 topic: before_after
-title: "{pet_name} transformation"
-body: "Open with the after shot, then reveal the grooming process."
+title: "{pet_name}洗护焕新前后对比"
+body: "先展示{pet_name}洗护后的清爽状态，再回顾这次{service_type}过程中的细节。"
 hashtags:
-  - transformation
-  - grooming
-image_prompt: "Vertical before-after pet grooming cover."
+  - 洗护前后对比
+  - 宠物洗护
+image_prompt: "竖版宠物洗护前后对比封面，突出清爽干净的变化。"

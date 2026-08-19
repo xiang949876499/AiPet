@@ -42,9 +42,13 @@ def build_customer_opportunities(db_session, store_id: int, limit: int = 8) -> l
             continue
         opportunities.append(
             {
+                "customer_id": customer.id,
                 "customer_name": customer.name,
+                "pet_id": pet.id,
                 "pet_name": pet.name,
                 "segment": segment,
+                "task_type": _task_type_for_segment(segment),
+                "priority": _priority_for_segment(segment),
                 "reason": f"{pet.name}距上次{record.service_type}已 {days_since} 天",
                 "suggested_action": action,
                 "message": _opportunity_message(customer.name, pet.name, segment),
@@ -53,6 +57,56 @@ def build_customer_opportunities(db_session, store_id: int, limit: int = 8) -> l
         )
     opportunities.sort(key=lambda item: item["score"], reverse=True)
     return opportunities[:limit]
+
+
+def build_outreach_queue(db_session, store_id: int) -> dict:
+    existing_tasks = (
+        db_session.query(FollowTask)
+        .filter_by(store_id=store_id)
+        .order_by(FollowTask.created_at.desc(), FollowTask.id.desc())
+        .all()
+    )
+    task_keys = {(task.customer_id, task.pet_id) for task in existing_tasks}
+
+    for opportunity in build_customer_opportunities(db_session, store_id, limit=50):
+        key = (opportunity.get("customer_id"), opportunity.get("pet_id"))
+        if None in key or key in task_keys:
+            continue
+        db_session.add(
+            FollowTask(
+                store_id=store_id,
+                customer_id=key[0],
+                pet_id=key[1],
+                task_type=opportunity.get("task_type") or opportunity.get("segment") or "客户触达",
+                priority=opportunity.get("priority") or "中",
+                reason=opportunity.get("reason") or "客户需要维护",
+                suggested_action=opportunity.get("suggested_action") or "发送关怀话术",
+                status="待处理",
+                ai_message=opportunity.get("message") or None,
+            )
+        )
+        task_keys.add(key)
+    db_session.commit()
+
+    tasks = (
+        db_session.query(FollowTask)
+        .filter_by(store_id=store_id)
+        .order_by(FollowTask.created_at.desc(), FollowTask.id.desc())
+        .all()
+    )
+    items = sorted((_outreach_task_payload(task) for task in tasks), key=_outreach_sort_key)
+    today = datetime.utcnow().date()
+    counts = {
+        "total": len(items),
+        "pending_script": sum(1 for item in items if item["status"] == "待处理" and not item.get("ai_message")),
+        "ready_to_send": sum(1 for item in items if item["status"] == "待处理" and item.get("ai_message")),
+        "sent_today": sum(
+            1
+            for task in tasks
+            if task.status == "已发送" and task.due_date is not None and task.due_date.date() == today
+        ),
+    }
+    return {"items": items, "counts": counts}
 
 
 def build_ops_metrics(db_session, store_id: int) -> dict:
@@ -132,3 +186,44 @@ def _opportunity_message(customer_name: str, pet_name: str, segment: str) -> str
     if segment == "洗护到期":
         return f"{customer_name}，{pet_name}上次洗护已经有一段时间啦，这周方便的话可以帮您安排一次清爽洗护。"
     return f"{customer_name}，感谢一直照顾我们小店，{pet_name}这周有需要的话我帮您优先留时间。"
+
+
+def _task_type_for_segment(segment: str) -> str:
+    if segment == "洗护到期":
+        return "洗护提醒"
+    if segment == "沉睡客户":
+        return "沉睡唤醒"
+    return "会员关怀"
+
+
+def _priority_for_segment(segment: str) -> str:
+    if segment == "沉睡客户":
+        return "高"
+    if segment == "洗护到期":
+        return "中"
+    return "低"
+
+
+def _outreach_task_payload(task: FollowTask) -> dict:
+    return {
+        "id": task.id,
+        "customer_id": task.customer_id,
+        "customer_name": task.customer.name if task.customer else "",
+        "pet_id": task.pet_id,
+        "pet_name": task.pet.name if task.pet else "",
+        "task_type": task.task_type,
+        "priority": task.priority,
+        "reason": task.reason,
+        "suggested_action": task.suggested_action,
+        "ai_message": task.ai_message,
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "status": task.status,
+        "result": task.result,
+    }
+
+
+def _outreach_sort_key(item: dict) -> tuple[int, int, int]:
+    status_rank = 0 if item.get("status") == "待处理" else 1
+    type_rank = {"洗护提醒": 0, "沉睡唤醒": 1, "会员关怀": 2}.get(item.get("task_type"), 3)
+    priority_rank = {"高": 0, "中": 1, "低": 2, "high": 0, "medium": 1, "low": 2}.get(item.get("priority"), 3)
+    return (status_rank, type_rank, priority_rank)

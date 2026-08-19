@@ -1,6 +1,13 @@
 # UX 改进 & 数据导入增强 设计文档
 
-> 日期: 2026-06-25 · 状态: 待实现
+> 日期: 2026-06-25 · 状态: 已实现
+
+## 实现结果
+
+- Vue SPA 侧边栏已放大主导航并新增快捷入口：导入客户、活动方案、AI 顾问、授权额度。
+- 工作台、任务中心与数据看板已拆分：工作台只展示今日概览/优先动作/快捷入口；任务中心承接客户触达和推广发布；数据看板聚焦经营漏斗、客户健康、触达策略效果与关键指标。
+- 客户导入已支持到店日期、服务项目、消费金额、备注，并新增 Vue 用 JSON 预检/导入 API。
+- 覆盖测试：`tests/test_services/test_customer_import.py`、`tests/test_web/test_customer_import_page.py`、`tests/test_web/test_frontend_split.py`。
 
 ## 概述
 

@@ -13,6 +13,23 @@ def test_reminder_agent_creates_due_washing_task(db_session, sample_records):
     assert "豆豆" in task.ai_message
 
 
+def test_reminder_agent_uses_llm_to_optimize_message(db_session, sample_records):
+    from agents.reminder import ReminderAgent
+    from app.models import FollowTask
+    from core.llm import LLMClient
+
+    prompts = []
+    llm = LLMClient(generator=lambda prompt: prompts.append(prompt) or "张姐，豆豆到洗护周期啦，这两天有空我帮您先留个清爽洗护时间。")
+
+    result = ReminderAgent(db_session=db_session, llm=llm).execute({"store_id": sample_records["store"].id})
+
+    task = db_session.query(FollowTask).one()
+    assert result["created"] == 1
+    assert task.ai_message == "张姐，豆豆到洗护周期啦，这两天有空我帮您先留个清爽洗护时间。"
+    assert "客户称呼：张姐" in prompts[0]
+    assert "宠物名称：豆豆" in prompts[0]
+
+
 def test_reminder_agent_does_not_duplicate_open_task(db_session, sample_records):
     from agents.reminder import ReminderAgent
 

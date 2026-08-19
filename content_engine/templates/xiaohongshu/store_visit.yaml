@@ -1,9 +1,9 @@
 code: xhs_store_visit
 channel: xiaohongshu
 topic: store_visit
-title: "A day at {store_name}"
-body: "What happens during a gentle {service_type} appointment?"
+title: "在{store_name}做一次{service_type}是什么体验？"
+body: "带家长看看一次温和{service_type}从接待到完成的过程，让服务细节更透明。"
 hashtags:
-  - store-visit
-  - pet-life
-image_prompt: "Bright store visit collage."
+  - 到店体验
+  - 宠物生活
+image_prompt: "明亮的小红书到店体验拼图封面，展示门店和宠物互动。"

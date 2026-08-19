@@ -16,6 +16,7 @@ def test_credit_plan_quotas_and_task_costs(db_session):
 
     assert CREDIT_COSTS["outreach_script"] == 1
     assert CREDIT_COSTS["activity_plan"] == 5
+    assert CREDIT_COSTS["activity_image"] == 3
     assert CREDIT_COSTS["store_audit"] == 20
     assert CREDIT_COSTS["weekly_report"] == 20
     assert credit_cost("douyin_script") == 3

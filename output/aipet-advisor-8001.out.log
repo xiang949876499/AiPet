@@ -1,0 +1,13 @@
+INFO:     127.0.0.1:13869 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13869 - "POST /api/advisor HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11371 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5994 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5994 - "GET /assets/index-Ch7v6yoe.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:2874 - "GET /assets/index-yzXXac3E.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5994 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:2874 - "GET /api/workbench HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9463 - "POST /api/reminders/3/friendly-message HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5849 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:5849 - "GET /assets/index-sAGgtRcW.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4472 - "GET /assets/index-CUd1qMSl.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4472 - "GET /api/workbench HTTP/1.1" 200 OK

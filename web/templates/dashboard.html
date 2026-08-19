@@ -20,9 +20,10 @@
   {{ subscription.credit_usage_label or "本月已用 0 / 0 Credit" }}
 </div>
 
-<section class="data-home">
+<section class="data-home data-home-polished">
   <header class="data-hero">
     <div>
+      <span class="data-live-chip">LIVE · 09:30</span>
       <h1>{{ store_name }} · 数据首页</h1>
       <p>首页只看经营数据；生成、接待、内容、点评等功能已移到左侧二级页面。</p>
     </div>
@@ -111,7 +112,7 @@
       </footer>
     </article>
 
-    <article class="data-panel trend-panel">
+    <article class="data-panel trend-panel" style="--trend-peek: {{ reply_rate if reply_rate < 100 else 100 }}%;">
       <header>
         <h2>近 7 天趋势</h2>
         <p>触达、回复、到店变化</p>

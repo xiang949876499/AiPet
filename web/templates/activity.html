@@ -1,60 +1,746 @@
 {% extends "_layout.html" %}
 {% set active_nav = "activity" %}
 
-{% block title %}活动方案生成器 - 宠店 AI 管家{% endblock %}
+{% block title %}营销文案生成器 - 宠店 AI 管家{% endblock %}
+
+{% block head %}
+<style>
+  .activity-workbench {
+    display: grid;
+    gap: 18px;
+  }
+
+  .activity-stage {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .activity-stage__body {
+    display: grid;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .activity-step {
+    display: inline-grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--color-amber-soft);
+    color: var(--color-primary-hover);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .activity-field {
+    display: grid;
+    gap: 10px;
+  }
+
+  .activity-field > span,
+  .activity-context summary,
+  .result-card__title {
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .platform-grid,
+  .direction-grid,
+  .activity-actions,
+  .image-mode-grid,
+  .result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .platform-card,
+  .direction-card,
+  .activity-action,
+  .image-mode-card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .platform-card {
+    display: grid;
+    min-width: 128px;
+    min-height: 78px;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .platform-card__icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--color-amber-soft);
+    font-size: 22px;
+  }
+
+  .direction-card {
+    min-width: 132px;
+    min-height: 44px;
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 800;
+  }
+
+  .platform-card.is-active,
+  .direction-card.is-active,
+  .image-mode-card.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-amber-soft);
+    color: var(--color-primary-hover);
+    box-shadow: 0 0 0 3px rgba(244, 163, 45, 0.14);
+  }
+
+  .activity-context {
+    border-top: 1px solid rgba(229, 216, 200, 0.72);
+    padding-top: 14px;
+  }
+
+  .activity-context summary {
+    cursor: pointer;
+  }
+
+  .activity-context textarea {
+    min-height: 92px;
+    margin-top: 10px;
+    resize: vertical;
+  }
+
+  .activity-generate-row {
+    display: grid;
+    gap: 14px;
+    border-top: 1px solid var(--color-border);
+    background: linear-gradient(180deg, #fffdfa, #fff7ea);
+  }
+
+  .activity-actions {
+    padding: 20px;
+  }
+
+  .activity-main-button {
+    min-width: 148px;
+    min-height: 46px;
+  }
+
+  .image-mode-panel {
+    display: grid;
+    gap: 12px;
+    margin: 0 20px 20px;
+    border: 1px solid rgba(229, 216, 200, 0.9);
+    border-radius: 8px;
+    background: #fff;
+    padding: 14px;
+  }
+
+  .image-mode-panel[hidden] {
+    display: none;
+  }
+
+  .image-mode-card {
+    display: grid;
+    min-width: min(260px, 100%);
+    flex: 1 1 260px;
+    gap: 5px;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .image-mode-card strong {
+    font-size: 15px;
+  }
+
+  .image-mode-card span {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.92fr);
+    gap: 16px;
+  }
+
+  .result-card {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+  }
+
+  .activity-result__meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-secondary);
+    font-weight: 800;
+  }
+
+  .activity-result__icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--color-amber-soft);
+    font-size: 18px;
+  }
+
+  .activity-copy {
+    min-height: 218px;
+    white-space: pre-wrap;
+  }
+
+  .image-preview {
+    display: grid;
+    min-height: 310px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px dashed var(--color-border);
+    border-radius: 8px;
+    background:
+      linear-gradient(135deg, rgba(244, 163, 45, 0.08), rgba(0, 166, 166, 0.08)),
+      #fffdfa;
+    color: var(--color-text-secondary);
+    text-align: center;
+    font-weight: 800;
+  }
+
+  .image-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 310px;
+    object-fit: cover;
+  }
+
+  .image-preview img[hidden] {
+    display: none;
+  }
+
+  .activity-action {
+    min-height: 40px;
+    padding: 0 14px;
+    font-weight: 800;
+  }
+
+  .activity-action:disabled,
+  .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  .activity-toast {
+    min-height: 22px;
+    color: var(--color-text-secondary);
+    font-weight: 800;
+  }
+
+  .activity-toast.is-error {
+    color: var(--color-danger);
+  }
+
+  @media (max-width: 860px) {
+    .result-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .activity-stage__body,
+    .activity-actions {
+      padding: 16px;
+    }
+
+    .image-mode-panel {
+      margin: 0 16px 16px;
+    }
+
+    .platform-card,
+    .direction-card,
+    .activity-main-button,
+    .activity-action {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1>活动方案生成器</h1>
-    <p>生成主题、规则、宣传文案和预计效果，适合人工确认后加入内容日历。</p>
+    <h1>营销文案生成器</h1>
+    <p>选平台、选方向，生成后复制发布。</p>
   </div>
 </div>
 
-<section class="card">
-  <div class="card-header">
-    <h2>策划活动</h2>
-  </div>
-  <div class="card-body">
-    {% if credit_error %}
-    <div class="empty-state">{{ credit_error }}</div>
-    {% endif %}
-    <form method="post" class="stack">
-      <label>
-        活动类型
-        <select class="app-search" name="activity_type">
-          <option value="老客复购" {% if form.activity_type == "老客复购" %}selected{% endif %}>老客复购</option>
-          <option value="新客引流" {% if form.activity_type == "新客引流" %}selected{% endif %}>新客引流</option>
-          <option value="周中填空" {% if form.activity_type == "周中填空" %}selected{% endif %}>周中填空</option>
-          <option value="储值活动" {% if form.activity_type == "储值活动" %}selected{% endif %}>储值活动</option>
-          <option value="节日活动" {% if form.activity_type == "节日活动" %}selected{% endif %}>节日活动</option>
-        </select>
-      </label>
-      <label>
-        目标客户
-        <input class="app-search" name="target" value="{{ form.target }}" placeholder="45 天未到店洗护客户">
-      </label>
-      <label>
-        优惠力度
-        <input class="app-search" name="offer" value="{{ form.offer }}" placeholder="基础洗护 9 折">
-      </label>
-      <label>
-        活动周期
-        <input class="app-search" name="duration" value="{{ form.duration }}" placeholder="7 天">
-      </label>
-      <button class="btn-primary" type="submit">生成方案</button>
-    </form>
-  </div>
-</section>
+<div class="activity-workbench" data-activity-app data-store-name="{{ store_name }}">
+  <section class="activity-stage" aria-labelledby="activity-content-title">
+    <div class="card-header">
+      <h2 id="activity-content-title"><span class="activity-step">1</span> 选择内容</h2>
+    </div>
+    <div class="activity-stage__body">
+      <div class="activity-field">
+        <span>平台</span>
+        <div class="platform-grid" role="tablist" aria-label="平台选择" data-platform-tabs></div>
+      </div>
 
-{% if plan %}
-<section class="card" style="margin-top:16px;">
-  <div class="card-header">
-    <h2>活动方案</h2>
-  </div>
-  <div class="card-body">
-    <div class="script-box">{{ plan }}</div>
-  </div>
-</section>
-{% endif %}
+      <div class="activity-field">
+        <span>方向</span>
+        <div class="direction-grid" aria-label="内容方向" data-direction-list></div>
+      </div>
+
+      <details class="activity-context">
+        <summary>补充说明</summary>
+        <textarea class="app-search" data-context-input placeholder="指定产品、品种、活动或门店信息"></textarea>
+      </details>
+    </div>
+  </section>
+
+  <section class="activity-stage activity-generate-row" aria-labelledby="activity-generate-title">
+    <div class="card-header">
+      <h2 id="activity-generate-title"><span class="activity-step">2</span> 生成</h2>
+    </div>
+    <div class="activity-actions">
+      <button class="btn-primary activity-main-button" type="button" data-generate>✏️ 生成文案</button>
+      <button class="btn-primary activity-main-button" type="button" data-toggle-image disabled>🖼️ 生成图片</button>
+    </div>
+    <div class="image-mode-panel" data-image-panel hidden>
+      <div class="image-mode-grid" role="group" aria-label="图片模式">
+        <button class="image-mode-card" type="button" data-image-mode="ai_image">
+          <strong>🤖 AI 智能配图</strong>
+          <span>根据文案生成配图，适合小红书和抖音。</span>
+        </button>
+        <button class="image-mode-card" type="button" data-image-mode="poster">
+          <strong>🎨 生成海报卡片</strong>
+          <span>把文案排版成图片，适合朋友圈。</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="activity-stage" aria-labelledby="activity-result-title">
+    <div class="card-header">
+      <h2 id="activity-result-title"><span class="activity-step">3</span> 结果</h2>
+    </div>
+    <div class="activity-stage__body">
+      <div class="result-grid">
+        <article class="result-card" aria-label="文案结果">
+          <div class="activity-result__meta">
+            <span class="activity-result__icon" data-result-icon>📱</span>
+            <span data-result-meta>抖音 · 改造前后</span>
+          </div>
+          <div class="script-box activity-copy" data-result-copy>选择内容方向后生成文案。</div>
+          <div class="result-actions">
+            <button class="activity-action" type="button" data-copy disabled>📋 复制</button>
+            <button class="activity-action" type="button" data-publish disabled>✅ 已发送</button>
+          </div>
+        </article>
+
+        <article class="result-card" aria-label="图片结果">
+          <div class="result-card__title">图片</div>
+          <div class="image-preview" data-image-preview>
+            <span data-image-placeholder>生成文案后可生成配图或海报。</span>
+            <img data-image-result alt="营销活动图片" hidden>
+          </div>
+          <div class="result-actions">
+            <button class="activity-action" type="button" data-download disabled>💾 下载</button>
+          </div>
+        </article>
+      </div>
+      <div class="activity-toast" data-toast aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const platforms = {{ activity_platforms|tojson }};
+    const preferredPlatformOrder = ["抖音", "小红书", "朋友圈"];
+    const platformNames = preferredPlatformOrder
+      .filter((name) => platforms[name])
+      .concat(Object.keys(platforms).filter((name) => !preferredPlatformOrder.includes(name)));
+    const platformIcons = {"抖音": "📱", "小红书": "📕", "朋友圈": "💬"};
+    const root = document.querySelector("[data-activity-app]");
+    const storeName = root.dataset.storeName || "宠物门店";
+    const state = {
+      platform: platformNames[0],
+      direction: platforms[platformNames[0]][0].name,
+      generated: null,
+      published: false,
+      imagePanelOpen: false,
+      imageUrl: "",
+      imageObjectUrl: "",
+      imageFormat: "png",
+      imageLoading: false,
+    };
+
+    const platformTabs = root.querySelector("[data-platform-tabs]");
+    const directionList = root.querySelector("[data-direction-list]");
+    const contextInput = root.querySelector("[data-context-input]");
+    const generateButton = root.querySelector("[data-generate]");
+    const toggleImageButton = root.querySelector("[data-toggle-image]");
+    const imagePanel = root.querySelector("[data-image-panel]");
+    const imageModeButtons = Array.from(root.querySelectorAll("[data-image-mode]"));
+    const copyButton = root.querySelector("[data-copy]");
+    const publishButton = root.querySelector("[data-publish]");
+    const downloadButton = root.querySelector("[data-download]");
+    const resultIcon = root.querySelector("[data-result-icon]");
+    const resultMeta = root.querySelector("[data-result-meta]");
+    const resultCopy = root.querySelector("[data-result-copy]");
+    const imageResult = root.querySelector("[data-image-result]");
+    const imagePlaceholder = root.querySelector("[data-image-placeholder]");
+    const toast = root.querySelector("[data-toast]");
+
+    function setToast(message, isError = false) {
+      toast.textContent = message;
+      toast.classList.toggle("is-error", isError);
+    }
+
+    function clearImage() {
+      if (state.imageObjectUrl) {
+        URL.revokeObjectURL(state.imageObjectUrl);
+      }
+      state.imageUrl = "";
+      state.imageObjectUrl = "";
+      state.imageFormat = "png";
+    }
+
+    function clearGenerated() {
+      state.generated = null;
+      state.published = false;
+      state.imagePanelOpen = false;
+      clearImage();
+    }
+
+    function renderPlatforms() {
+      platformTabs.innerHTML = "";
+      platformNames.forEach((name) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `platform-card${name === state.platform ? " is-active" : ""}`;
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-selected", name === state.platform ? "true" : "false");
+        button.innerHTML = `<span class="platform-card__icon">${platformIcons[name] || "✨"}</span><strong>${name}</strong>`;
+        button.addEventListener("click", () => {
+          state.platform = name;
+          state.direction = platforms[name][0].name;
+          clearGenerated();
+          setToast("");
+          render();
+        });
+        platformTabs.appendChild(button);
+      });
+    }
+
+    function renderDirections() {
+      directionList.innerHTML = "";
+      platforms[state.platform].forEach((direction) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `direction-card${direction.name === state.direction ? " is-active" : ""}`;
+        button.textContent = direction.name;
+        button.setAttribute("aria-pressed", direction.name === state.direction ? "true" : "false");
+        button.addEventListener("click", () => {
+          state.direction = direction.name;
+          clearGenerated();
+          setToast("");
+          render();
+        });
+        directionList.appendChild(button);
+      });
+    }
+
+    function resultText() {
+      if (!state.generated) {
+        return "";
+      }
+      return `${state.generated.title}\n\n${state.generated.body}`;
+    }
+
+    function renderImage() {
+      imagePanel.hidden = !state.imagePanelOpen;
+      toggleImageButton.disabled = !state.generated || state.imageLoading;
+      toggleImageButton.textContent = state.imagePanelOpen ? "🖼️ 收起图片模式" : "🖼️ 生成图片";
+      imageModeButtons.forEach((button) => {
+        button.disabled = state.imageLoading;
+        button.classList.toggle("is-active", state.imageLoading && button.dataset.imageMode === "ai_image");
+      });
+      if (state.imageUrl) {
+        imageResult.src = state.imageUrl;
+        imageResult.hidden = false;
+        imagePlaceholder.hidden = true;
+        downloadButton.disabled = false;
+      } else {
+        imageResult.removeAttribute("src");
+        imageResult.hidden = true;
+        imagePlaceholder.hidden = false;
+        imagePlaceholder.textContent = state.generated ? "选择图片模式后生成预览。" : "生成文案后可生成配图或海报。";
+        downloadButton.disabled = true;
+      }
+    }
+
+    function renderResult() {
+      resultIcon.textContent = platformIcons[state.platform] || "✨";
+      resultMeta.textContent = `${state.platform} · ${state.direction}`;
+      resultCopy.textContent = state.generated ? resultText() : "选择内容方向后生成文案。";
+      copyButton.disabled = !state.generated;
+      publishButton.disabled = !state.generated || state.published;
+      publishButton.textContent = state.published ? "✅ 已发送" : "✅ 已发送";
+      renderImage();
+    }
+
+    function render() {
+      renderPlatforms();
+      renderDirections();
+      renderResult();
+    }
+
+    async function postJson(url, payload) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.detail || "请求失败");
+      }
+      return data;
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error("poster_failed"));
+          }
+        }, "image/png");
+      });
+    }
+
+    function drawTextBlock(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+      const paragraphs = String(text || "").split(/\n+/);
+      const lines = [];
+      paragraphs.forEach((paragraph) => {
+        let line = "";
+        Array.from(paragraph).forEach((char) => {
+          const testLine = `${line}${char}`;
+          if (ctx.measureText(testLine).width > maxWidth && line) {
+            lines.push(line);
+            line = char;
+          } else {
+            line = testLine;
+          }
+        });
+        if (line) {
+          lines.push(line);
+        }
+      });
+      const limited = lines.slice(0, maxLines);
+      if (lines.length > maxLines && limited.length) {
+        limited[limited.length - 1] = `${limited[limited.length - 1].slice(0, -1)}…`;
+      }
+      limited.forEach((line, index) => {
+        ctx.fillText(line, x, y + index * lineHeight);
+      });
+      return y + limited.length * lineHeight;
+    }
+
+    async function renderPosterImage() {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1350;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff8eb";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#0aa978";
+      ctx.fillRect(0, 0, canvas.width, 18);
+      ctx.fillStyle = "#f4a32d";
+      ctx.fillRect(0, 18, canvas.width, 18);
+      ctx.fillStyle = "#101827";
+      ctx.font = "700 42px Microsoft YaHei, sans-serif";
+      ctx.fillText(storeName, 78, 128);
+      ctx.fillStyle = "#d88916";
+      ctx.font = "800 76px Microsoft YaHei, sans-serif";
+      const bodyStart = drawTextBlock(ctx, state.generated.title, 78, 258, 900, 88, 3) + 52;
+      ctx.fillStyle = "#303846";
+      ctx.font = "42px Microsoft YaHei, sans-serif";
+      const footerTop = drawTextBlock(ctx, state.generated.body, 78, bodyStart, 900, 62, 10) + 84;
+      ctx.fillStyle = "#fffdfa";
+      ctx.fillRect(78, Math.min(footerTop, 1050), 924, 170);
+      ctx.strokeStyle = "#e5d8c8";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(78, Math.min(footerTop, 1050), 924, 170);
+      ctx.fillStyle = "#101827";
+      ctx.font = "700 34px Microsoft YaHei, sans-serif";
+      ctx.fillText(`${state.platform} · ${state.direction}`, 118, Math.min(footerTop + 64, 1114));
+      ctx.fillStyle = "#667085";
+      ctx.font = "28px Microsoft YaHei, sans-serif";
+      ctx.fillText("到店咨询或扫码预约", 118, Math.min(footerTop + 116, 1166));
+      ctx.strokeStyle = "#101827";
+      ctx.strokeRect(830, Math.min(footerTop + 32, 1082), 104, 104);
+      ctx.beginPath();
+      ctx.moveTo(852, Math.min(footerTop + 54, 1104));
+      ctx.lineTo(912, Math.min(footerTop + 54, 1104));
+      ctx.moveTo(852, Math.min(footerTop + 86, 1136));
+      ctx.lineTo(912, Math.min(footerTop + 86, 1136));
+      ctx.moveTo(884, Math.min(footerTop + 54, 1104));
+      ctx.lineTo(884, Math.min(footerTop + 118, 1168));
+      ctx.stroke();
+      const blob = await canvasToBlob(canvas);
+      clearImage();
+      state.imageObjectUrl = URL.createObjectURL(blob);
+      state.imageUrl = state.imageObjectUrl;
+      state.imageFormat = "png";
+    }
+
+    generateButton.addEventListener("click", async () => {
+      generateButton.disabled = true;
+      generateButton.textContent = "生成中...";
+      setToast("");
+      try {
+        const data = await postJson("/api/activity/generate", {
+          platform: state.platform,
+          direction: state.direction,
+          context: contextInput.value.trim(),
+        });
+        clearImage();
+        state.generated = data;
+        state.published = false;
+        state.imagePanelOpen = false;
+        setToast("已生成文案");
+      } catch (error) {
+        setToast(error.message === "本月额度已用完，请升级套餐" ? error.message : "生成失败，请重试", true);
+      } finally {
+        generateButton.disabled = false;
+        generateButton.textContent = "✏️ 生成文案";
+        renderResult();
+      }
+    });
+
+    toggleImageButton.addEventListener("click", () => {
+      if (!state.generated) {
+        return;
+      }
+      state.imagePanelOpen = !state.imagePanelOpen;
+      setToast("");
+      renderResult();
+    });
+
+    imageModeButtons.forEach((button) => {
+      button.addEventListener("click", async () => {
+        if (!state.generated || state.imageLoading) {
+          return;
+        }
+        state.imageLoading = true;
+        setToast(button.dataset.imageMode === "poster" ? "正在生成海报..." : "正在生成图片...");
+        renderResult();
+        try {
+          if (button.dataset.imageMode === "poster") {
+            await renderPosterImage();
+          } else {
+            const data = await postJson("/api/activity/generate-image", {
+              title: state.generated.title,
+              body: state.generated.body,
+              mode: "ai_image",
+            });
+            clearImage();
+            state.imageUrl = data.url;
+            state.imageFormat = data.format || "png";
+          }
+          setToast("图片已生成");
+        } catch (error) {
+          setToast(error.message || "图片生成失败，请改用海报卡片", true);
+        } finally {
+          state.imageLoading = false;
+          renderResult();
+        }
+      });
+    });
+
+    copyButton.addEventListener("click", async () => {
+      if (!state.generated) {
+        return;
+      }
+      try {
+        if (!navigator.clipboard) {
+          throw new Error("clipboard_unavailable");
+        }
+        await navigator.clipboard.writeText(resultText());
+        setToast("已复制");
+      } catch (error) {
+        const range = document.createRange();
+        range.selectNodeContents(resultCopy);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        setToast("请手动 Ctrl+C 复制");
+      }
+    });
+
+    publishButton.addEventListener("click", async () => {
+      if (!state.generated || state.published) {
+        return;
+      }
+      publishButton.disabled = true;
+      setToast("");
+      try {
+        await postJson("/api/activity/publish", {
+          title: state.generated.title,
+          body: state.generated.body,
+          channel: state.generated.channel,
+          direction: state.direction,
+        });
+        state.published = true;
+        setToast("已发送");
+      } catch (error) {
+        publishButton.disabled = false;
+        setToast("标记失败，请重试", true);
+      } finally {
+        renderResult();
+      }
+    });
+
+    downloadButton.addEventListener("click", () => {
+      if (!state.imageUrl) {
+        return;
+      }
+      const link = document.createElement("a");
+      link.href = state.imageUrl;
+      link.download = `activity-${Date.now()}.${state.imageFormat || "png"}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    });
+
+    render();
+  })();
+</script>
 {% endblock %}

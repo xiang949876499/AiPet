@@ -62,7 +62,11 @@ class ContentAgent:
         )
 
     def _generate(self, channel: str, store_name: str) -> tuple[str, str]:
-        prompt = f"为{store_name}生成一条{channel}内容，主题是宠物洗护复购和客户维系，输出标题和正文。"
+        prompt = (
+            f"你是宠物门店的新媒体运营助手。请为{store_name}生成一条{channel}内容，"
+            "主题是宠物洗护复购和客户维系。要求语气自然、亲切、像真实门店会发布的话，"
+            "不夸大效果，不制造焦虑。请按“标题：...\\n正文：...”输出。"
+        )
         generated = self.llm.generate(prompt)
         if generated:
             title, body = _parse_generated(generated)

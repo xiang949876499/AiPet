@@ -19,7 +19,7 @@
     {% if credit_error %}
     <div class="empty-state">{{ credit_error }}</div>
     {% endif %}
-    <form method="post" class="stack">
+    <form method="post" class="stack" data-submit-once>
       <label>
         场景
         <select class="app-search" name="scenario">

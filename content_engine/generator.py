@@ -6,6 +6,7 @@ from pathlib import Path
 from string import Formatter
 
 from app.models import ContentItem, Customer, Pet, ServiceRecord, Store
+from core.llm import LLMClient
 
 
 TEMPLATE_ROOT = Path(__file__).with_name("templates")
@@ -59,10 +60,17 @@ def render_template(template: dict, variables: dict) -> dict:
     }
 
 
-def generate_content_item(session, store_id: int, template_code: str, scheduled_date: date | None = None) -> ContentItem:
+def generate_content_item(
+    session,
+    store_id: int,
+    template_code: str,
+    scheduled_date: date | None = None,
+    llm_client: LLMClient | None = None,
+) -> ContentItem:
     template = load_template(template_code)
     values = auto_fill_variables(template_code, store_id, session)
     rendered = render_template(template, values)
+    rendered = optimize_rendered_copy(rendered, values, llm_client)
     item = ContentItem(
         store_id=store_id,
         channel=template.get("channel", "moments"),
@@ -81,8 +89,52 @@ def generate_content_item(session, store_id: int, template_code: str, scheduled_
     return item
 
 
+def optimize_rendered_copy(rendered: dict, variables: dict, llm_client: LLMClient | None = None) -> dict:
+    if llm_client is None:
+        return rendered
+
+    prompt = (
+        "你是宠物门店的新媒体运营助手。请把下面的内容改写成自然、亲切、适合门店发布的中文文案，"
+        "保留事实，不夸大效果，不制造焦虑。只输出 JSON，字段为 title、body、image_prompt。\n"
+        f"门店：{variables.get('store_name')}\n"
+        f"宠物：{variables.get('pet_name')}\n"
+        f"品种：{variables.get('breed')}\n"
+        f"服务：{variables.get('service_type')}\n"
+        f"原标题：{rendered.get('title', '')}\n"
+        f"原正文：{rendered.get('body', '')}\n"
+        f"原图片提示：{rendered.get('image_prompt', '')}"
+    )
+    generated = llm_client.generate(prompt)
+    optimized = _parse_copy_json(generated)
+    if optimized is None:
+        return rendered
+    return {
+        "title": optimized.get("title") or rendered.get("title", ""),
+        "body": optimized.get("body") or rendered.get("body", ""),
+        "hashtags": rendered.get("hashtags", []),
+        "image_prompt": optimized.get("image_prompt") or rendered.get("image_prompt", ""),
+    }
+
+
 def _fallback_image_prompt(template_code: str, variables: dict) -> str:
     return f"Editable image prompt for {template_code}: {variables.get('pet_name')} at {variables.get('store_name')}"
+
+
+def _parse_copy_json(text: str | None) -> dict | None:
+    if not text:
+        return None
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if "\n" in cleaned:
+            cleaned = cleaned.split("\n", 1)[1]
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    return parsed
 
 
 def _parse_simple_yaml(raw: str) -> dict:

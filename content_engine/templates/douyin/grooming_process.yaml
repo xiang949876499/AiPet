@@ -1,9 +1,9 @@
 code: douyin_grooming_process
 channel: douyin
 topic: grooming_process
-title: "Grooming process in 30 seconds"
-body: "Hook: watch {pet_name}'s {service_type} process from start to finish."
+title: "30 秒看完{pet_name}的洗护过程"
+body: "用短视频记录{pet_name}从进店到完成{service_type}的关键步骤，让家长看见门店的细心。"
 hashtags:
-  - short-video
-  - grooming
-image_prompt: "Vertical short-video storyboard for grooming process."
+  - 洗护过程
+  - 宠物短视频
+image_prompt: "竖版宠物洗护过程分镜封面，画面干净明亮。"

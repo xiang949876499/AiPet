@@ -1,9 +1,9 @@
 code: douyin_product_unboxing
 channel: douyin
 topic: product_unboxing
-title: "Pet product unboxing"
-body: "Show what the product is, who it fits, and how to use it safely."
+title: "宠物好物开箱与使用建议"
+body: "介绍这款产品适合什么场景、怎么安全使用，以及家长挑选时要注意什么。"
 hashtags:
-  - unboxing
-  - pet-products
-image_prompt: "Vertical pet product unboxing cover."
+  - 宠物好物
+  - 开箱分享
+image_prompt: "竖版宠物用品开箱封面，突出产品和使用场景。"

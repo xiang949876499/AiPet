@@ -1,9 +1,9 @@
 code: moments_holiday
 channel: moments
 topic: holiday
-title: "Holiday care reminder"
-body: "Holiday slots fill quickly. Reserve care time for {pet_name} early."
+title: "节假日前记得提前给{pet_name}约洗护"
+body: "假期前预约时间比较紧，建议家长提前为{pet_name}预留合适的护理时段。"
 hashtags:
-  - holiday
-  - booking
-image_prompt: "Holiday pet grooming reminder poster."
+  - 节假日预约
+  - 宠物护理
+image_prompt: "节假日宠物洗护预约提醒海报，语气温和不焦虑。"

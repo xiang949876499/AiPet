@@ -18,9 +18,12 @@ def test_dashboard_exposes_core_workbench_navigation(tmp_path, monkeypatch):
     _seed_workbench(tmp_path, monkeypatch)
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # "/" 在存在 Vue 构建时返回 SPA 外壳；导航断言针对 Jinja 回退模板
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
     response = client.get("/")
 
     assert response.status_code == 200
@@ -40,9 +43,12 @@ def test_dashboard_uses_data_first_homepage_design(tmp_path, monkeypatch):
     _seed_workbench(tmp_path, monkeypatch)
 
     from fastapi.testclient import TestClient
-    from web.app import create_app
+    import web.app as web_app
 
-    client = TestClient(create_app())
+    # "/" 在存在 Vue 构建时返回 SPA 外壳；首页文案断言针对 Jinja 回退模板
+    monkeypatch.setattr(web_app, "_frontend_build_available", lambda: False)
+
+    client = TestClient(web_app.create_app())
     response = client.get("/")
 
     assert response.status_code == 200
